@@ -46,3 +46,18 @@ test('uploads are filtered by operator and quarter, newest first', () => {
   ];
   assert.deepEqual(uploadsFor(list, 'a', '2026-Q3').map((u) => u.uploadedAt.slice(8, 10)), ['03', '01']);
 });
+
+test('only Excel / CSV files are accepted', async () => {
+  const { isTicketFile } = await import('../js/ticket.js');
+  for (const n of ['a.csv', 'B.XLSX', '票證.xls']) assert.equal(isTicketFile(n), true, n);
+  for (const n of ['a.pdf', 'a.png', 'a.jpg', 'a.docx', 'csv', 'a.csv.pdf', '', undefined]) assert.equal(isTicketFile(n), false, String(n));
+});
+
+test('multi-file upload: totals, dedupe by name, old single-file records', async () => {
+  const { mergeFiles, uploadFiles } = await import('../js/ticket.js');
+  const m = mergeFiles([{ fileName: 'a.csv', size: 10, rows: 3 }, { fileName: 'b.xlsx', size: 5, rows: 2 }, { fileName: 'a.csv', size: 12, rows: 4 }]);
+  assert.deepEqual(m.files.map((f) => f.fileName), ['a.csv', 'b.xlsx']);
+  assert.equal(m.rows, 6); assert.equal(m.size, 17);
+  assert.deepEqual(uploadFiles({ fileName: 'x.csv', size: 1, rows: 1 }), [{ fileName: 'x.csv', size: 1, rows: 1 }]);
+  assert.equal(uploadFiles({ files: [{ fileName: 'a' }, { fileName: 'b' }] }).length, 2);
+});

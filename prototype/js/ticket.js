@@ -92,3 +92,19 @@ export function countDataRows(rows) {
   const filled = (rows ?? []).filter((r) => Array.isArray(r) && r.some((c) => String(c ?? '').trim() !== ''));
   return Math.max(0, filled.length - 1);
 }
+
+/** 只接受 Excel／CSV（圖片、PDF、Word 等一律不收）。 */
+export const TICKET_FILE_EXT = ['csv', 'xlsx', 'xls'];
+export const TICKET_FILE_ACCEPT = '.csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+export const isTicketFile = (name) => TICKET_FILE_EXT.includes(String(name ?? '').split('.').pop().toLowerCase()) && /\.[^.]+$/.test(name ?? '');
+
+/** 一次上傳的檔案清單。舊紀錄只有單一 fileName／size／rows，轉成一個檔案。 */
+export const uploadFiles = (u) => (u?.files?.length ? u.files : u ? [{ fileName: u.fileName, size: u.size, rows: u.rows }] : []);
+
+/** 把同一批的檔案合併（同檔名以後加入的為準），回傳 { files, rows, size }。 */
+export function mergeFiles(files) {
+  const map = new Map();
+  for (const f of files ?? []) map.set(f.fileName, f);
+  const list = [...map.values()];
+  return { files: list, rows: list.reduce((s, f) => s + (f.rows ?? 0), 0), size: list.reduce((s, f) => s + (f.size ?? 0), 0) };
+}

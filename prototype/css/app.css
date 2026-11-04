@@ -290,7 +290,7 @@ table.hb-sheet .km-src-icon { margin-right: 4px; font-size: 12px; color: var(--h
 .tk-summary strong { font-size: 20px; font-weight: 500; color: var(--hb-text-table); }
 .tk-upload { margin-top: 24px; }
 .tk-drop {
-  display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 96px; padding: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 120px; padding: 16px;
   border: 2px dashed var(--hb-box-border); border-radius: var(--hb-card-radius); background: #f9fafb; color: var(--hb-text); cursor: pointer; text-align: center;
 }
 .tk-drop .bi { font-size: 28px; color: #658b9f; }
@@ -386,3 +386,16 @@ a.mt-link .bi { font-size: 11px; }
   .hb-box { border: 0; padding: 0; }
   .mt-item { break-inside: avoid; }
 }
+.tk-drop-hint { font-size: 13px; color: var(--hb-muted2); }
+.tk-picked { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tk-picked:empty { display: none; }
+.tk-picked li { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--hb-box-border); border-radius: var(--hb-card-radius); font-size: 15px; }
+.tk-picked li > .bi { color: #1d7a46; }
+.tk-picked li.is-error { border-color: #e5a1a1; background: #fdf3f3; }
+.tk-picked li.is-error > .bi, .tk-picked li.is-error .tk-picked-meta { color: #b42318; }
+.tk-picked-name { flex: 1; min-width: 0; word-break: break-all; }
+.tk-picked-meta { font-size: 13px; color: var(--hb-muted2); white-space: nowrap; }
+.tk-picked-x { border: 0; background: none; padding: 4px; cursor: pointer; color: var(--hb-muted2); }
+.tk-picked-x:hover { color: var(--hb-text-table); }
+.tk-file > div + div { margin-top: 4px; }
+.tk-file-sub { margin-left: 8px; font-size: 13px; color: var(--hb-muted2); }

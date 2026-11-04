@@ -3,6 +3,7 @@
 import {
   TICKET_STATUS, TICKET_DEADLINE_DAY, quartersOf, parseQuarter, quarterLabel, quarterMonths, dueMonth, dueWindow,
   uploadsFor, getTicketStatus, isLate, canUploadNow, countDataRows,
+  TICKET_FILE_ACCEPT, isTicketFile, uploadFiles, mergeFiles,
 } from '../ticket.js';
 import { getTicketUploads, addTicketUpload } from '../store.js';
 import { can } from '../permissions.js';
@@ -93,10 +94,10 @@ export function showTicketHelp(showModal) {
   showModal({
     title: '票證資料上傳說明',
     body: `<ul>
-      <li>票證資料<strong>不需線上填報</strong>，每季上傳一次檔案（CSV 或 Excel）。只需上傳票證資料，準點率由系統廠商另行計算。</li>
+      <li>票證資料<strong>不需線上填報</strong>，每季上傳一次檔案（CSV 或 Excel，可一次上傳多個檔案）。只需上傳票證資料，準點率由系統廠商另行計算。</li>
       <li>每季結束後的<strong>下一個月 1–15 日</strong>上傳：第 1 季 → 4 月、第 2 季 → 7 月、第 3 季 → 10 月、第 4 季 → 隔年 1 月。資料於次月底上架。</li>
       <li>15 日前未上傳，<strong>16 日起顯示「逾期未繳」</strong>，仍可補傳。</li>
-            <li>系統會讀取檔案計算資料筆數（第一列視為表頭）；上傳後可再上傳更新，以最新一筆為準，舊紀錄保留。</li></ul>`,
+            <li>只接受 CSV、Excel（.xlsx、.xls），圖片、PDF 等其他格式不收。系統會讀取每個檔案計算資料筆數（第一列視為表頭）；同一次選的多個檔案算一次上傳。上傳後可再上傳更新，以最新一次為準，舊紀錄保留。</li></ul>`,
   });
 }
 
@@ -127,9 +128,9 @@ export function renderTicketPage(root, { operator, quarter, session }) {
 
   const notice = {
     notStarted: `上傳期間為 ${w.from.replaceAll('-', '/')}–${w.to.slice(8)} 日。季已結束，可以先上傳。`,
-    open: `上傳期間至 ${w.to.replaceAll('-', '/')}，6 日起顯示逾期。`,
+    open: `上傳期間至 ${w.to.replaceAll('-', '/')}，16 日起顯示逾期。`,
     overdue: `已超過 ${w.to.replaceAll('-', '/')} 的期限，仍可補傳。`,
-    completed: `已上傳 ${list.length} 次，以最新一筆為準。${list.length && isLate(list.at(-1), quarter) ? '首次上傳晚於期限（逾期上傳）。' : ''}`,
+    completed: `已上傳 ${list.length} 次，以最新一次為準。${list.length && isLate(list.at(-1), quarter) ? '首次上傳晚於期限（逾期上傳）。' : ''}`,
   }[st];
 
   const summary = `<div class="tk-summary">
@@ -141,11 +142,13 @@ export function renderTicketPage(root, { operator, quarter, session }) {
 
   const uploader = canUpload ? `<div class="hb-box tk-upload">
       <h3 class="hb-subtitle">${list.length ? '重新上傳（更新資料）' : '上傳檔案'}</h3>
-      <div class="tk-drop" id="tk-drop" tabindex="0" role="button" aria-label="選擇票證資料檔案">
+      <div class="tk-drop" id="tk-drop" tabindex="0" role="button" aria-label="選擇票證資料檔案，可複選">
         <i class="bi bi-cloud-arrow-up"></i>
-        <span id="tk-file-text">拖曳檔案到這裡，或<u>選擇檔案</u>（CSV、XLSX）</span>
-        <input type="file" id="tk-file" accept=".csv,.xlsx,.xls" hidden>
+        <span>拖曳檔案到這裡，或<u>選擇檔案</u></span>
+        <span class="tk-drop-hint">可複選；只接受 CSV、Excel（.csv、.xlsx、.xls），不接受圖片、PDF 等其他格式</span>
+        <input type="file" id="tk-file" accept="${TICKET_FILE_ACCEPT}" multiple hidden>
       </div>
+      <ul class="tk-picked" id="tk-picked" aria-live="polite"></ul>
       <div><label class="hb-label" for="tk-note">備註（選填）</label><input class="hb-input" id="tk-note" placeholder="例如補上漏傳的日期"></div>
       <div id="tk-err"></div>
       <div class="rpt-actions"><button type="button" class="hb-btn" id="tk-go" disabled><i class="bi bi-upload"></i>上傳</button></div>
@@ -153,7 +156,7 @@ export function renderTicketPage(root, { operator, quarter, session }) {
 
   const rows = list.map((u, i) => `<tr>
       <td>${fmtDate(u.uploadedAt)}${i === 0 ? ' <span class="hb-tag tk-tag">最新</span>' : ''}${isLate(u, quarter) ? ' <span class="hb-tag hb-tag-warn tk-tag">逾期</span>' : ''}</td>
-      <td class="tk-file"><i class="bi bi-file-earmark-spreadsheet"></i>${esc(u.fileName)}</td>
+      <td class="tk-file">${uploadFiles(u).map((f) => `<div><i class="bi bi-file-earmark-spreadsheet"></i>${esc(f.fileName)}${uploadFiles(u).length > 1 ? `<span class="tk-file-sub">${fmtSize(f.size)}｜${num(f.rows)} 筆</span>` : ''}</div>`).join('')}</td>
       <td class="tk-num">${fmtSize(u.size)}</td>
       <td class="tk-num">${num(u.rows)}</td>
       <td>${esc(u.uploadedBy)}</td>
@@ -174,7 +177,7 @@ export function renderTicketPage(root, { operator, quarter, session }) {
       <div class="rpt-block">
         <h3 class="hb-subtitle">檔案上傳紀錄</h3>
         ${list.length ? `<div class="tk-tablewrap"><table class="tk-table">
-          <thead><tr><th>上傳時間</th><th>檔案名稱</th><th class="tk-num">檔案大小</th><th class="tk-num">資料筆數</th><th>上傳者</th><th>備註</th></tr></thead>
+          <thead><tr><th>上傳時間</th><th>檔案名稱</th><th class="tk-num">檔案大小（合計）</th><th class="tk-num">資料筆數（合計）</th><th>上傳者</th><th>備註</th></tr></thead>
           <tbody>${rows}</tbody></table></div>
           <p class="tk-foot">原型只記錄檔名、大小與筆數，不保存檔案內容。</p>`
         : '<div class="hb-empty">尚未上傳任何檔案。</div>'}
@@ -186,34 +189,56 @@ export function renderTicketPage(root, { operator, quarter, session }) {
   const drop = root.querySelector('#tk-drop');
   const go = root.querySelector('#tk-go');
   const err = root.querySelector('#tk-err');
-  let picked = null;
+  const pickedEl = root.querySelector('#tk-picked');
+  let picked = []; // { fileName, size, rows | null, error }
+  const ok = () => picked.filter((f) => f.rows);
 
-  const pick = async (file) => {
-    picked = null; go.disabled = true; err.innerHTML = '';
-    if (!file) return;
-    if (!/\.(csv|xlsx|xls)$/i.test(file.name)) { err.innerHTML = msg('只接受 CSV 或 Excel（.xlsx、.xls）檔案。', 'danger'); return; }
-    root.querySelector('#tk-file-text').innerHTML = `<b>${esc(file.name)}</b>（${fmtSize(file.size)}）讀取中…`;
-    try {
-      const rows = await readRows(file);
-      if (!rows) { err.innerHTML = msg('檔案裡沒有資料（第一列視為表頭）。請確認檔案內容。', 'danger'); return; }
-      picked = { fileName: file.name, size: file.size, rows };
-      root.querySelector('#tk-file-text').innerHTML = `<b>${esc(file.name)}</b>（${fmtSize(file.size)}）｜讀到 <b>${num(rows)}</b> 筆資料`;
-      go.disabled = false;
-    } catch (e) {
-      err.innerHTML = msg(`無法讀取檔案：${esc(e.message)}`, 'danger');
-    }
+  const draw = () => {
+    pickedEl.innerHTML = picked.map((f, i) => `<li class="${f.error ? 'is-error' : ''}">
+        <i class="bi bi-file-earmark-spreadsheet"></i>
+        <span class="tk-picked-name">${esc(f.fileName)}</span>
+        <span class="tk-picked-meta">${fmtSize(f.size)}｜${f.error ? esc(f.error) : f.rows == null ? '讀取中…' : `${num(f.rows)} 筆`}</span>
+        <button type="button" class="tk-picked-x" data-i="${i}" aria-label="移除 ${esc(f.fileName)}"><i class="bi bi-x-lg"></i></button>
+      </li>`).join('');
+    const good = ok();
+    go.disabled = !good.length || picked.some((f) => f.rows == null && !f.error);
+    go.innerHTML = `<i class="bi bi-upload"></i>上傳${good.length ? `（${good.length} 個檔案，共 ${num(mergeFiles(good).rows)} 筆）` : ''}`;
+    pickedEl.querySelectorAll('[data-i]').forEach((b) => { b.onclick = () => { picked.splice(Number(b.dataset.i), 1); draw(); }; });
+  };
+
+  const pick = async (fileList) => {
+    err.innerHTML = '';
+    const files = [...(fileList ?? [])];
+    const bad = files.filter((f) => !isTicketFile(f.name));
+    if (bad.length) err.innerHTML = msg(`以下檔案不是 CSV 或 Excel，已略過：${bad.map((f) => esc(f.name)).join('、')}`, 'danger');
+    const add = files.filter((f) => isTicketFile(f.name));
+    // 同檔名再選一次＝換成新的
+    picked = picked.filter((p) => !add.some((f) => f.name === p.fileName));
+    const entries = add.map((f) => ({ fileName: f.name, size: f.size, rows: null, error: '', file: f }));
+    picked.push(...entries);
+    draw();
+    await Promise.all(entries.map(async (e) => {
+      try {
+        const rows = await readRows(e.file);
+        if (!rows) e.error = '沒有資料（第一列視為表頭）';
+        else e.rows = rows;
+      } catch (x) { e.error = `無法讀取：${x.message}`; }
+      draw();
+    }));
   };
   drop.onclick = () => input.click();
   drop.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } };
-  input.onchange = () => pick(input.files[0]);
+  input.onchange = () => { pick(input.files); input.value = ''; };
   drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('is-over'); };
   drop.ondragleave = () => drop.classList.remove('is-over');
-  drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('is-over'); pick(e.dataTransfer.files[0]); };
+  drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('is-over'); pick(e.dataTransfer.files); };
   go.onclick = () => {
-    if (!picked) return;
-    const res = addTicketUpload(operator.id, quarter, { ...picked, note: root.querySelector('#tk-note').value }, session);
+    const good = ok();
+    if (!good.length) return;
+    const files = good.map(({ fileName, size, rows }) => ({ fileName, size, rows }));
+    const res = addTicketUpload(operator.id, quarter, { files, note: root.querySelector('#tk-note').value }, session);
     if (!res.ok) { err.innerHTML = msg(`上傳失敗：${esc(res.error)}`, 'danger'); return; }
-    toast(`已上傳 ${picked.fileName}（${num(picked.rows)} 筆）`);
+    toast(`已上傳 ${files.length} 個檔案（共 ${num(res.upload.rows)} 筆）`);
     renderTicketPage(root, { operator, quarter, session });
   };
 }

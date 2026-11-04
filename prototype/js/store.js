@@ -6,6 +6,7 @@ import { applyAction } from './status.js';
 import { addVersion } from './versions.js';
 import { can } from './permissions.js';
 import { createThread, replyThread, setThreadStatus, toggleReaction, resolveAll, openThreads, latestComment, migrateNotes } from './threads.js';
+import { isTicketFile, mergeFiles } from './ticket.js';
 
 const STATE_KEY = 'huabus-proto-state-v1';
 const SESSION_KEY = 'huabus-proto-session';
@@ -250,10 +251,17 @@ export function requestChange(operatorId, yearMonth, fields, reason, session) {
 // ---- 票證資料（每季上傳檔案） ----
 export const getTicketUploads = () => state.ticketUploads ?? [];
 
-/** 業者上傳票證資料檔案。原型只記錄檔名、大小、資料筆數，不保存檔案內容。 */
-export function addTicketUpload(operatorId, quarter, { fileName, size, rows, note }, session) {
+/**
+ * 業者上傳票證資料檔案（可一次多個檔案，算同一次上傳）。原型只記錄檔名、大小、資料筆數，不保存檔案內容。
+ * files：[{ fileName, size, rows }]；紀錄上的 fileName／size／rows 是整批的合計，舊畫面照樣能用。
+ */
+export function addTicketUpload(operatorId, quarter, { files, note }, session) {
   if (!can(session.role, 'uploadTicket', { operatorId, ownOperatorId: session.operatorId })) return { ok: false, error: 'not allowed' };
-  const rec = { operatorId, quarter, fileName, size, rows, note: note?.trim() || '', uploadedAt: nowISO(), uploadedBy: userName(session) };
+  if (!files?.length) return { ok: false, error: 'no files' };
+  if (files.some((f) => !isTicketFile(f.fileName))) return { ok: false, error: '只接受 CSV 或 Excel 檔案' };
+  const m = mergeFiles(files);
+  const fileName = m.files.length > 1 ? `${m.files[0].fileName} 等 ${m.files.length} 個檔案` : m.files[0].fileName;
+  const rec = { operatorId, quarter, fileName, size: m.size, rows: m.rows, files: m.files, note: note?.trim() || '', uploadedAt: nowISO(), uploadedBy: userName(session) };
   state.ticketUploads = [...getTicketUploads(), rec];
   persist();
   return { ok: true, upload: rec };
