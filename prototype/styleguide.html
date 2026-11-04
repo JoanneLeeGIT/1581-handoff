@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>元件樣張（花蓮公車原型）</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/huabus-theme.css">
+  <link rel="stylesheet" href="css/app.css">
+  <style>
+    /* 只給樣張頁用的排版，不是系統元件 */
+    body { margin: 0; padding-bottom: 0; background: var(--hb-page-bg); }
+    .app { min-height: 100vh; }
+    #sidebar { height: 100vh; }
+    .sg { display: flex; flex-direction: column; gap: 16px; }
+    .sg-sec h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-size: 18px; color: var(--hb-text-strong); }
+    .sg-sec > p { margin: 0 0 12px; font-size: 14px; color: var(--hb-muted2); }
+    .sg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .sg-col { display: flex; flex-direction: column; gap: 12px; }
+    .sg-src { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 18px; }
+    .sg-src.online { background: #e6f6ef; color: #0f766e; }
+    .sg-src.figma { background: #eef2ff; color: #4338ca; }
+    .sg-src.new { background: #fff7ed; color: #8a5a00; border: 1px dashed #f7cb45; }
+    .sg-sw { display: flex; flex-direction: column; gap: 4px; width: 128px; font-size: 12px; color: var(--hb-muted2); }
+    .sg-sw i { display: block; height: 40px; border-radius: 6px; border: 1px solid var(--hb-box-border); }
+    .sg-sw b { font-weight: 500; font-size: 13px; color: var(--hb-text); }
+    .sg-type > div { display: flex; align-items: baseline; gap: 16px; padding: 6px 0; border-bottom: 1px solid var(--hb-td-border); }
+    .sg-type code { width: 200px; flex: none; font-size: 12px; color: var(--hb-muted2); }
+    .sg-q { margin-top: 8px; padding: 10px 14px; border: 1px dashed #f7cb45; border-radius: 6px; background: #fffdf6; font-size: 14px; color: var(--hb-text); }
+    .sg-q b { color: #8a5a00; }
+    .sg-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 900px) { .sg-grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body class="hb">
+  <div class="app">
+    <aside id="sidebar"></aside>
+    <main id="main" class="hb-main">
+      <div class="sg">
+
+        <section class="hb-card sg-sec">
+          <h1 class="hb-title">元件樣張</h1>
+          <p class="hb-desc" style="margin-top:8px">月報總覽、填報、檢視三個畫面之後都只用這頁的元件。每個元件標出樣式來源：</p>
+          <div class="sg-row">
+            <span class="sg-src online">線上系統</span><span style="font-size:14px">照 ds.thigov.com/HauBus 量測</span>
+            <span class="sg-src figma">Figma</span><span style="font-size:14px">沿用設計稿</span>
+            <span class="sg-src new">新定・待確認</span><span style="font-size:14px">線上沒有，從線上色票推出，請你確認</span>
+          </div>
+        </section>
+
+        <!-- 色票 -->
+        <section class="hb-card sg-sec">
+          <h2>色票</h2>
+          <p>只用這些顏色。表格與狀態的顏色都從線上色票或 Figma 狀態圖示取，沒有新增色系。</p>
+          <div class="sg-row" style="align-items:flex-start">
+            <div class="sg-sw"><i style="background:var(--hb-brand-grad)"></i><b>品牌漸層</b>選單選中、深色標題列<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:var(--hb-btn-primary)"></i><b>主要按鈕</b>送出、新增、下載<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:var(--hb-btn-dark)"></i><b>深色按鈕</b>搜尋、查詢<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:#2e3747"></i><b>文字 #2E3747</b>標題、一般文字<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:#64748b"></i><b>次要文字 #64748B</b>說明、時間<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:#d8e2ef"></i><b>框線 #D8E2EF</b>內框、表格格線<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:#f7fafe"></i><b>淡底 #F7FAFE</b>導覽列、表頭<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:#e1f5fd"></i><b>淡藍 #E1F5FD</b>分頁選中、組別、差異<span class="sg-src online">線上</span></div>
+            <div class="sg-sw"><i style="background:#f6ebdd"></i><b>暖米 #F6EBDD</b>統計卡選中、總計列<span class="sg-src online">線上</span></div>
+          </div>
+          <div class="sg-row" style="align-items:flex-start;margin-top:16px">
+            <div class="sg-sw"><i style="background:var(--hb-st-completed)"></i><b>已完成</b>#4AE4CD<span class="sg-src figma">Figma</span></div>
+            <div class="sg-sw"><i style="background:var(--hb-st-reviewing)"></i><b>檢核中</b>#99DFFF<span class="sg-src figma">Figma</span></div>
+            <div class="sg-sw"><i style="background:var(--hb-st-needsUpdate)"></i><b>須更新</b>#F7CB45<span class="sg-src figma">Figma</span></div>
+            <div class="sg-sw"><i style="background:var(--hb-st-overdue)"></i><b>逾期／錯誤</b>#FD6C7B<span class="sg-src figma">Figma</span></div>
+            <div class="sg-sw"><i style="background:var(--hb-st-changeRequested)"></i><b>申請變更</b>#7C5CD6<span class="sg-src new">新定</span></div>
+          </div>
+          <div class="sg-q"><b>改掉的問題：</b>原本填報頁的狀態色（#1FA971、#3AA0D8…）和總覽的 Figma 圖示色不同，現在統一用 Figma 圖示色；Bootstrap 的藍（#0B5ED7）全部拿掉。</div>
+        </section>
+
+        <!-- 字級 -->
+        <section class="hb-card sg-sec">
+          <h2>字級 <span class="sg-src online">線上系統</span></h2>
+          <p>字型 Noto Sans TC → 微軟正黑體。</p>
+          <div class="sg-type">
+            <div><code>頁面標題 23px／700</code><span style="font-size:23px;font-weight:700">月報及票證資料上傳區</span></div>
+            <div><code>區塊標題 18px／700</code><span style="font-size:18px;font-weight:700;color:var(--hb-text-strong)">檢核備註（縣府）</span></div>
+            <div><code>內文、表單 16px</code><span style="font-size:16px">照原「營運概況表」一列一條路線填寫</span></div>
+            <div><code>報表表格 14px <span class="sg-src new">新定</span></code><span style="font-size:14px">營業行車次數(班次)　14.65　1,234</span></div>
+            <div><code>標籤、圖例 14px</code><span style="font-size:14px;color:var(--hb-muted2)">提交期限每月 10 日</span></div>
+            <div><code>填寫說明列 12px <span class="sg-src new">新定</span></code><span style="font-size:12px;color:var(--hb-muted2)">業者填寫，或業者可選擇從報表產製的班次明細資料計算</span></div>
+          </div>
+          <div class="sg-q"><b>請確認：</b>線上表格內文是 16px，但填報表有 31 欄，用 16px 會變得非常寬，所以報表表格定 14px（原本是 12.8px，偏小）。</div>
+        </section>
+
+        <!-- 按鈕 -->
+        <section class="hb-card sg-sec">
+          <h2>按鈕 <span class="sg-src online">線上系統</span></h2>
+          <p>一個畫面只放一個主要按鈕（橘色）。次要動作用白色，查詢用深色。</p>
+          <div class="sg-row">
+            <button class="hb-btn"><i class="bi bi-send"></i>送出月報</button>
+            <button class="hb-btn hb-btn-white">取消</button>
+            <button class="hb-btn hb-btn-dark"><i class="bi bi-search"></i>搜尋</button>
+            <button class="hb-btn" disabled>送出月報（不可按）</button>
+          </div>
+          <div class="sg-row" style="margin-top:12px">
+            <button class="hb-btn hb-btn-sm hb-btn-white"><i class="bi bi-box-arrow-in-down"></i>從班次明細帶入</button>
+            <button class="hb-btn hb-btn-sm hb-btn-white"><i class="bi bi-info-circle"></i>填寫說明</button>
+            <button class="hb-btn hb-btn-sm"><i class="bi bi-pencil"></i>修改重送</button>
+            <button class="hb-iconbtn-sq" aria-label="下載"><i class="bi bi-download"></i></button>
+            <span class="sg-src new">小尺寸為新定</span>
+          </div>
+        </section>
+
+        <!-- 分頁與表單 -->
+        <div class="sg-grid2">
+          <section class="hb-card sg-sec">
+            <h2>分頁 <span class="sg-src online">線上系統</span></h2>
+            <p>頁面分頁和報表內的工作表分頁用同一種。</p>
+            <div class="hb-tabs" role="tablist">
+              <button class="hb-tab active" role="tab" aria-selected="true">路線別營運概況</button>
+              <button class="hb-tab" role="tab" aria-selected="false">車輛情形及包車出租</button>
+            </div>
+          </section>
+          <section class="hb-card sg-sec">
+            <h2>表單 <span class="sg-src online">線上系統</span></h2>
+            <p>聚焦時是橘色外框。</p>
+            <div class="sg-col">
+              <div><label class="hb-label" for="sg-ver">版本</label>
+                <select id="sg-ver" class="hb-select"><option>第 2 版（現行）｜2026-11-08 14:20</option></select></div>
+              <div><label class="hb-label" for="sg-note">檔案備註（選填）</label>
+                <textarea id="sg-note" class="hb-textarea" rows="2" placeholder="例如：H2-02 本月因道路施工停駛 3 天"></textarea></div>
+              <div class="hb-inline-form"><input class="hb-input" placeholder="新增檢核備註"><button class="hb-btn hb-btn-white">新增</button></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 狀態與標籤 -->
+        <section class="hb-card sg-sec">
+          <h2>狀態標籤 <span class="sg-src new">新定・待確認</span></h2>
+          <p>圖示和月報總覽的月份格完全相同（Figma），加上文字和淡底。填報、檢視頁標題旁都用這個。</p>
+          <div class="sg-row" id="sg-status"></div>
+          <h2 style="margin-top:20px">資訊標籤 <span class="sg-src new">新定</span></h2>
+          <div class="sg-row">
+            <span class="hb-tag"><i class="bi bi-calendar3"></i>提交期限每月 10 日</span>
+            <span class="hb-tag hb-tag-warn"><i class="bi bi-hourglass-split"></i>公式待縣府確認</span>
+          </div>
+        </section>
+
+        <!-- 訊息 -->
+        <section class="hb-card sg-sec">
+          <h2>訊息 <span class="sg-src new">新定・待確認</span></h2>
+          <p>取代 Bootstrap 的色塊提示。左側色條＋淡底，顏色和狀態同一組。</p>
+          <div class="sg-col">
+            <div class="hb-msg"><i class="bi bi-info-circle"></i><div class="hb-msg-body">這是第一版，沒有可比對的前一版本。</div></div>
+            <div class="hb-msg hb-msg-warn"><i class="bi bi-bell"></i><div class="hb-msg-body">業者已送出新版本（第 3 版），目前畫面不是最新資料。</div><button class="hb-btn hb-btn-sm hb-btn-white hb-msg-action">載入最新版本</button></div>
+            <div class="hb-msg hb-msg-danger"><i class="bi bi-exclamation-circle"></i><div class="hb-msg-body">有 2 個儲存格未填或格式不符，已標紅：<ul><li>H2-02 固定班次 平均座位數：必須是整數</li><li>H2-03 固定班次 小計：必填</li></ul></div></div>
+            <div class="hb-msg hb-msg-success"><i class="bi bi-check-circle"></i><div class="hb-msg-body">示範乙社區發展協會 2026-11 月報已送出，狀態：檢核中。</div></div>
+          </div>
+          <div class="sg-row" style="margin-top:16px">
+            <div class="hb-toast" style="position:static"><i class="bi bi-check-circle-fill"></i>已帶入班次明細，請檢查後再送出</div>
+            <span style="font-size:14px;color:var(--hb-muted2)">← 右上角短暫通知，和線上提示泡泡同色</span>
+          </div>
+        </section>
+
+        <!-- 報表表格 -->
+        <section class="hb-card sg-sec">
+          <h2>報表式表格 <span class="sg-src new">新定・待確認</span></h2>
+          <p>結構照原 Excel（三層表頭、凍結前四欄、總計列固定在底部），顏色改用線上色票。下面是填報模式，示範每一種格子。</p>
+          <div class="hb-keys" style="margin-bottom:12px">
+            <span><i class="hb-sw is-sys"></i>系統自動填寫（唯讀）</span>
+            <span><i class="hb-sw"></i>業者填寫</span>
+            <span><i class="hb-sw is-locked"></i>不適用（鎖定為 0）</span>
+            <span><i class="hb-sw is-filled"></i>剛帶入，請確認</span>
+            <span><i class="bi bi-calculator"></i>延人公里＝客運人數 × 月底營業里程 × 0.35 <span class="hb-tag hb-tag-warn">公式待縣府確認</span></span>
+          </div>
+          <div class="hb-sheet-title"><strong>市區汽車客運路線別營運概況</strong><span>統計期:11511　縣市別:花蓮縣　客運別:示範乙社區發展協會　排序:依路線編號</span></div>
+          <div class="hb-sheetwrap" tabindex="0">
+            <table class="hb-sheet">
+              <colgroup><col style="width:48px"><col style="width:80px"><col style="width:88px"><col style="width:88px"><col style="width:96px"><col style="width:96px"><col style="width:96px"><col style="width:112px"><col style="width:128px"><col style="width:96px"><col style="width:96px"><col style="width:160px"></colgroup>
+              <thead>
+                <tr>
+                  <th rowspan="3" class="frz" style="left:0">序號</th>
+                  <th rowspan="3" class="frz" style="left:48px">路線<br>編號</th>
+                  <th colspan="2" class="frz frz-last" style="left:128px">起訖站名稱</th>
+                  <th rowspan="2">月底營業里程</th>
+                  <th colspan="4" class="is-group">固定班次部份</th>
+                  <th colspan="2" class="is-group">預約班次部份</th>
+                  <th rowspan="3">備註</th>
+                </tr>
+                <tr>
+                  <th class="frz" style="left:128px;top:auto">起站</th>
+                  <th class="frz frz-last" style="left:216px">訖站</th>
+                  <th rowspan="1">平均座位數</th>
+                  <th>營業行車次數<br>小計</th>
+                  <th>低地板或具升降設備公車</th>
+                  <th>延人公里</th>
+                  <th>平均座位數</th>
+                  <th>營業行車次數<br>小計</th>
+                </tr>
+                <tr>
+                  <th class="is-unit frz" style="left:128px"></th>
+                  <th class="is-unit frz frz-last" style="left:216px"></th>
+                  <th class="is-unit">(車公里)</th><th class="is-unit">(個)</th><th class="is-unit">(班次)</th><th class="is-unit">(班次)</th><th class="is-unit">(人公里)</th><th class="is-unit">(個)</th><th class="is-unit">(班次)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="is-guide frz" style="left:0" colspan="1"></td>
+                  <td class="is-guide frz" style="left:48px"></td>
+                  <td class="is-guide frz" style="left:128px"></td>
+                  <td class="is-guide frz frz-last" style="left:216px"></td>
+                  <td class="is-guide">系統自動計算</td>
+                  <td class="is-guide">必填，整數，取大</td>
+                  <td class="is-guide">必填，整數</td>
+                  <td class="is-guide">必填，整數</td>
+                  <td class="is-guide">必填，小數；可選系統計算</td>
+                  <td class="is-guide" colspan="2">同左</td>
+                  <td class="is-guide">選填</td>
+                </tr>
+                <tr>
+                  <td class="is-sys num frz" style="left:0">1</td>
+                  <td class="is-sys frz" style="left:48px"><b>H2-01</b></td>
+                  <td class="is-sys frz" style="left:128px">甲站</td>
+                  <td class="is-sys frz frz-last" style="left:216px">己站</td>
+                  <td class="is-sys num">14.65</td>
+                  <td class="is-op num"><input class="hb-cellinput" value="20" aria-label="H2-01 固定班次 平均座位數"></td>
+                  <td class="is-op num"><input class="hb-cellinput" value="124" aria-label="H2-01 固定班次 小計"></td>
+                  <td class="is-op num"><input class="hb-cellinput" value="62" aria-label="H2-01 固定班次 低地板"></td>
+                  <td class="is-sys num"><div class="hb-kmcell"><button class="hb-kmtoggle sg-km" data-source="computed" title="系統計算，點一下改成自行填寫" aria-label="延人公里：系統計算"><svg class="km-ic km-ic-calc" viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="2.5" width="12" height="15" rx="3.5"/><path d="M7.5 6.5h5"/><circle cx="8" cy="11" r=".6"/><circle cx="12" cy="11" r=".6"/><circle cx="8" cy="14" r=".6"/><circle cx="12" cy="14" r=".6"/></svg><svg class="km-ic km-ic-pen" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.8 4.2a1.9 1.9 0 0 1 2.7 2.7l-8 8-3.5.8.8-3.5z"/><path d="M11.3 5.7l2.9 2.9"/></svg></button><span style="flex:1">1,846.0</span></div></td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-op"><input class="hb-cellinput" aria-label="H2-01 備註"></td>
+                </tr>
+                <tr>
+                  <td class="is-sys num frz" style="left:0">2</td>
+                  <td class="is-sys frz" style="left:48px"><b>H2-02</b></td>
+                  <td class="is-sys frz" style="left:128px">丙站</td>
+                  <td class="is-sys frz frz-last" style="left:216px">辛站</td>
+                  <td class="is-sys num">44.98</td>
+                  <td class="is-op num is-error" title="必須是整數"><input class="hb-cellinput" value="20.5" aria-invalid="true" aria-label="H2-02 固定班次 平均座位數"></td>
+                  <td class="is-op num is-filled"><input class="hb-cellinput" value="96" aria-label="H2-02 固定班次 小計"></td>
+                  <td class="is-op num is-filled"><input class="hb-cellinput" value="48" aria-label="H2-02 固定班次 低地板"></td>
+                  <td class="is-op num"><div class="hb-kmcell"><button class="hb-kmtoggle sg-km" data-source="manual" title="自行填寫，點一下改回系統計算" aria-label="延人公里：自行填寫"><svg class="km-ic km-ic-calc" viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="2.5" width="12" height="15" rx="3.5"/><path d="M7.5 6.5h5"/><circle cx="8" cy="11" r=".6"/><circle cx="12" cy="11" r=".6"/><circle cx="8" cy="14" r=".6"/><circle cx="12" cy="14" r=".6"/></svg><svg class="km-ic km-ic-pen" viewBox="0 0 20 20" aria-hidden="true"><path d="M12.8 4.2a1.9 1.9 0 0 1 2.7 2.7l-8 8-3.5.8.8-3.5z"/><path d="M11.3 5.7l2.9 2.9"/></svg></button><input class="hb-cellinput" value="3,210" aria-label="H2-02 延人公里"></div></td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-op"><input class="hb-cellinput" value="道路施工停駛 3 天" aria-label="H2-02 備註"></td>
+                </tr>
+                <tr>
+                  <td class="is-sys num frz" style="left:0">3</td>
+                  <td class="is-sys frz" style="left:48px"><b>H2-03</b></td>
+                  <td class="is-sys frz" style="left:128px">戊站</td>
+                  <td class="is-sys frz frz-last" style="left:216px">庚站</td>
+                  <td class="is-sys num">8.20</td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-locked num">0</td>
+                  <td class="is-op num"><input class="hb-cellinput" value="12" aria-label="H2-03 預約班次 平均座位數"></td>
+                  <td class="is-op num"><input class="hb-cellinput" aria-label="H2-03 預約班次 小計" placeholder=""></td>
+                  <td class="is-op"><input class="hb-cellinput" aria-label="H2-03 備註"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="4" class="frz frz-last" style="left:0">總　　計</th>
+                  <td class="num"></td>
+                  <td class="num"></td>
+                  <td class="num">220</td>
+                  <td class="num">110</td>
+                  <td class="num">5,056.0</td>
+                  <td class="num"></td>
+                  <td class="num">0</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p style="margin-top:8px;font-size:14px;color:var(--hb-muted2)">第 2 列示範：平均座位數填 20.5（錯誤，紅底紅框）、小計和低地板剛從班次明細帶入（淡黃底）、延人公里改成自行填寫。</p>
+
+          <h2 style="margin-top:24px">檢視模式：與上一版不同的格子</h2>
+          <div class="hb-keys" style="margin-bottom:12px"><span><i class="hb-sw is-diff"></i>與第 1 版不同（共 2 處）</span></div>
+          <div class="hb-sheetwrap">
+            <table class="hb-sheet">
+              <colgroup><col style="width:48px"><col style="width:80px"><col style="width:96px"><col style="width:96px"><col style="width:96px"></colgroup>
+              <thead><tr><th>序號</th><th>路線編號</th><th>平均座位數</th><th>營業行車次數<br>小計</th><th>低地板</th></tr></thead>
+              <tbody>
+                <tr><td class="is-sys num">1</td><td class="is-sys"><b>H2-01</b></td><td class="num">20</td><td class="num is-diff">126</td><td class="num">62</td></tr>
+                <tr><td class="is-sys num">2</td><td class="is-sys"><b>H2-02</b></td><td class="num">20</td><td class="num">96</td><td class="num is-diff">50</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sg-q"><b>和原本不同、請確認：</b>
+            ① 不適用的格子改成淡灰斜線底，和系統唯讀的灰底分得開（原本兩種灰很像）。
+            ② 錯誤格用 Figma 逾期的紅（#FD6C7B）加紅框，不再用 Bootstrap 紅。
+            ③ 總計列用線上統計卡的暖米色，原本是自己定的米黃。
+            ④ 差異格用分頁選中的淡藍加深藍粗體字。
+            ⑤ 焦點框用選單漸層的灰藍，不再是 Bootstrap 藍。</div>
+        </section>
+
+        <!-- 備註 -->
+        <section class="hb-card sg-sec">
+          <h2>備註紀錄 <span class="sg-src new">新定</span></h2>
+          <div class="sg-grid2">
+            <div><h3 class="hb-subtitle">檔案備註（業者）</h3>
+              <ul class="hb-notes"><li><span class="hb-notes-meta">2026-11-08 14:20｜示範乙社區發展協會</span>H2-02 本月因道路施工停駛 3 天。</li></ul></div>
+            <div><h3 class="hb-subtitle">檢核備註（縣府）</h3>
+              <ul class="hb-notes"><li class="is-review"><span class="hb-notes-meta">2026-11-09 10:05｜花蓮縣政府</span>H2-02 低地板班次與上月差異大，請確認。</li></ul></div>
+          </div>
+        </section>
+
+        <!-- 組合範例 -->
+        <section class="hb-card sg-sec">
+          <h2>組合範例：業者填報畫面上方</h2>
+          <p>之後填報頁會長這樣（表格同上）。標題列結構和月報總覽一致。</p>
+          <div class="hb-card" style="box-shadow:none;border:1px solid var(--hb-box-border)">
+            <a class="hb-back" href="#" onclick="return false"><i class="bi bi-chevron-left"></i>返回月報總覽</a>
+            <div class="hb-pagehead">
+              <h1 class="hb-title">示範乙社區發展協會 2026-11 營運月報填報</h1>
+              <span class="sg-status-slot" data-st="open"></span>
+              <span class="hb-tag"><i class="bi bi-calendar3"></i>提交期限每月 10 日</span>
+              <div class="hb-pagehead-end"><button class="hb-btn hb-btn-sm hb-btn-white"><i class="bi bi-box-arrow-in-down"></i>從班次明細帶入</button></div>
+            </div>
+            <p class="hb-desc">一列一條路線，照原「營運概況表」填寫。按 Enter 往下一列、Tab 往右一格。</p>
+            <div class="hb-tabbar">
+              <div class="hb-tabs" role="tablist">
+                <button class="hb-tab active" role="tab" aria-selected="true">路線別營運概況</button>
+                <button class="hb-tab" role="tab" aria-selected="false">車輛情形及包車出租</button>
+              </div>
+              <div class="hb-actions"><button class="hb-btn hb-btn-sm hb-btn-white"><i class="bi bi-info-circle"></i>填寫說明</button></div>
+            </div>
+            <div class="hb-box">
+              <div class="hb-empty">（報表表格）</div>
+            </div>
+            <div style="margin-top:16px"><label class="hb-label" for="sg-note2">檔案備註（選填）</label><textarea id="sg-note2" class="hb-textarea" rows="2"></textarea></div>
+            <div class="sg-row" style="margin-top:16px;justify-content:flex-end">
+              <button class="hb-btn hb-btn-white">取消</button>
+              <button class="hb-btn"><i class="bi bi-send"></i>送出月報</button>
+            </div>
+          </div>
+          <div class="sg-q"><b>請確認：</b>送出／取消按鈕從左下改到右下（線上系統的主要按鈕都在右側）。「從班次明細帶入」移到標題列右邊。</div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+  <script type="module">
+    import { initStore } from './js/store.js';
+    import { mountSidebar } from './js/ui/sidebar.js';
+    import { statusGlyph } from './js/ui/matrix.js';
+    import { STATUS } from './js/status.js';
+
+    const pill = (s) => `<span class="hb-status st-${s}">${statusGlyph(s, { legend: true })}${STATUS[s]}</span>`;
+    document.getElementById('sg-status').innerHTML =
+      ['notStarted', 'open', 'overdue', 'reviewing', 'needsUpdate', 'completed', 'changeRequested'].map(pill).join('');
+    document.querySelectorAll('.sg-status-slot').forEach((el) => { el.outerHTML = pill(el.dataset.st); });
+
+    // 樣張上的延人公里圖示可以點，看切換動畫
+    document.querySelectorAll('.sg-km').forEach((b) => b.addEventListener('click', () => { b.dataset.source = b.dataset.source === 'manual' ? 'computed' : 'manual'; }));
+    try { await initStore(); } catch (e) { /* 樣張不需要資料 */ }
+    mountSidebar(document.getElementById('sidebar'));
+  </script>
+</body>
+</html>
