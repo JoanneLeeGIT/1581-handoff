@@ -1,5 +1,6 @@
 // 填報頁（US1, US4）：業者線上填報（不提供檔案匯入，FR-004）；縣府也可從檢視頁進來直接修改業者資料（存成新版本）。
-import { getStatus, STATUS, DEADLINE_DAY } from '../status.js';
+import { getStatus, STATUS } from '../status.js';
+import { submitWindow, slashDate } from '../schedule.js';
 import { can } from '../permissions.js';
 import { getToday } from '../clock.js';
 import { getCurrentVersion, pendingChange } from '../versions.js';
@@ -18,6 +19,7 @@ const blocked = (root, text, back) => {
 export function renderFillPage(root, { operator, yearMonth, session, report }) {
   const status = getStatus(report, yearMonth, getToday());
   const isCounty = session.role === 'county';
+  const due = slashDate(submitWindow('report', yearMonth).to);
   const viewHref = `report.html?mode=view&op=${encodeURIComponent(operator.id)}&ym=${yearMonth}`;
   const cancelHref = isCounty || report?.versions?.length ? viewHref : 'index.html';
   const back = isCounty ? backLink(viewHref, '返回', '返回月報檢視') : backLink();
@@ -44,7 +46,7 @@ export function renderFillPage(root, { operator, yearMonth, session, report }) {
     : isChange ? msg(pending
       ? `你正在修改尚待縣府處理的變更（第 ${pending.versionNo} 版）。送出後會再存成新版本；縣府同意前，仍以第 ${baseNo} 版為準。`
       : `此月份已檢核完成。直接修改後送出，會存成新版本並進入「申請變更」；縣府同意前，仍以第 ${baseNo} 版為準。`, 'warn')
-    : status === 'overdue' ? msg(`已超過每月 ${DEADLINE_DAY} 日的期限，仍可補填送出。`, 'danger') : '';
+    : status === 'overdue' ? msg(`已超過 ${due} 的期限，仍可補填送出。`, 'danger') : '';
 
   // 表格上方的填報狀態列：進度、待修正格數、帶入／送出的訊息（捲動時固定在畫面上方）
   const statusBar = `
@@ -65,7 +67,7 @@ export function renderFillPage(root, { operator, yearMonth, session, report }) {
         ${back}<span class="hb-pagehead-sep" aria-hidden="true"></span>
         <h1 class="hb-title">${esc(operator.name)} ${yearMonth} 營運月報</h1>
         ${statusBadge(status)}
-        ${isCounty ? '<span class="hb-tag">縣府編輯</span>' : isChange ? '<span class="hb-tag">申請變更</span>' : `<span class="hb-tag"><i class="bi bi-calendar3"></i>每月 ${DEADLINE_DAY} 日截止</span>`}
+        ${isCounty ? '<span class="hb-tag">縣府編輯</span>' : isChange ? '<span class="hb-tag">申請變更</span>' : `<span class="hb-tag"><i class="bi bi-calendar3"></i>${due} 截止</span>`}
         <div class="hb-pagehead-end">
           ${shiftBtn}
           <button type="button" class="hb-btn hb-btn-sm hb-btn-white guide-toggle" aria-expanded="false"><i class="bi bi-info-circle"></i>填寫說明</button>

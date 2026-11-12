@@ -5,6 +5,7 @@ import { getOperators, getReport, latestComments } from '../store.js';
 import { latestComment } from '../threads.js';
 import { plainText } from '../richtext.js';
 import { getToday } from '../clock.js';
+import { SCHEDULE, windowText } from '../schedule.js';
 import { esc, fmtDate, statusGlyph, micon } from './common.js';
 
 export { statusGlyph };
@@ -57,7 +58,7 @@ function noteCell(note, { session, opId, kind }) {
   // 業者與縣府都能在任務留言板回覆；唯讀單位只能檢視
   const canEdit = session.role !== 'readonly';
   const label = `${canEdit ? '回覆' : '檢視'}${kind === 'operator' ? '業者' : '縣府'}留言`;
-  const text = plainText(note.text) || '（附件）';
+  const text = plainText(note.text) || '—';
   const tip = `${note.yearMonth}｜${fmtDate(note.at)}｜${note.author}${note.threadStatus === 'resolved' ? '（已解決）' : ''}\n${text}`;
   // 列內小圖示＝線上「班表」眼睛樣式（淺灰、滑過變深），圖形用導覽列同一套 Material 圖示
   return `<div class="hb-note" role="cell">
@@ -99,7 +100,7 @@ export function renderMatrix(root, { session, year, onYear }) {
     }).join('');
     const sub = op.type === 'happybus' ? `<span class="hb-op-sub">幸福巴士 ${esc(op.happybusVersion)}</span>` : '';
     return `<div class="hb-grid hb-row" role="row">
-      <div class="hb-op" role="rowheader" title="${esc(op.name)}"><span class="hb-op-name">${esc(op.name)}</span>${sub}</div>
+      <div class="hb-op" role="rowheader"><span class="hb-op-name">${esc(op.name)}</span>${sub}</div>
       ${cells}
       ${noteCell(notes.operator, { session, opId: op.id, kind: 'operator' })}
       ${noteCell(notes.county, { session, opId: op.id, kind: 'county' })}
@@ -111,9 +112,9 @@ export function renderMatrix(root, { session, year, onYear }) {
       <div class="hb-banner">
         <div class="hb-banner-text">
           <h2>營運月報</h2>
-          <p>每月 10 日前需更新資料，若本月 1-10 日未更新，11 日即顯示遲繳</p>
+          <p>${windowText('report')}填報上個月的資料，${SCHEDULE.report.deadlineDay + 1} 日起顯示逾期。資料於當月月底上架。月份為資料所屬月份</p>
         </div>
-        <div class="hb-deadline"><span>提交期限</span><strong>每月10日</strong></div>
+        <div class="hb-deadline"><span>提交期限</span><strong>每月${SCHEDULE.report.deadlineDay}日</strong></div>
       </div>
       <div class="hb-tablewrap">
         <div class="hb-grid hb-yearrow">

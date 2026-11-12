@@ -83,6 +83,7 @@ body { background: #fff; font-size: 16px; --proto-tb-h: 48px; padding-bottom: va
 
 .hb-box { border: 1px solid var(--hb-box-border); border-radius: var(--hb-card-radius); padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 .hb-empty { padding: 32px 16px; text-align: center; color: var(--hb-muted2); }
+.tk-none i { margin-right: 6px; }
 
 .hb-banner {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
@@ -95,11 +96,11 @@ body { background: #fff; font-size: 16px; --proto-tb-h: 48px; padding-bottom: va
 .hb-deadline strong { font-size: 14px; line-height: 20px; }
 
 /* 表格：照線上 DataTables（表頭白底、下緣 2px；每列下緣 1px；滑過變色）。
-   欄寬：營運業者 112px＋15 個月各 35px＋兩欄備註平分剩餘寬度（至少 167px） */
+   欄寬：營運業者 250px（最長名稱「花蓮縣萬榮鄉馬遠社區發展協會」完整顯示，不截斷）＋15 個月各 35px＋兩欄留言平分剩餘寬度（120–200px） */
 .hb-tablewrap { overflow-x: auto; }
 .hb-grid {
-  display: grid; grid-template-columns: 112px repeat(15, 35px) minmax(167px, 1fr) minmax(167px, 1fr);
-  column-gap: 4px; align-items: center; min-width: 1040px;
+  display: grid; grid-template-columns: 250px repeat(15, 35px) minmax(120px, 200px) minmax(120px, 200px);
+  column-gap: 4px; align-items: center; min-width: 1100px;
 }
 .hb-yearrow { position: relative; height: 46px; padding-top: 16px; align-items: start; }
 .hb-year { font-size: 16px; font-weight: 500; line-height: 1.4; color: var(--hb-text-table); padding-left: 4px; }
@@ -120,7 +121,7 @@ body { background: #fff; font-size: 16px; --proto-tb-h: 48px; padding-bottom: va
 .hb-row { min-height: 64px; padding: 8px 0; border-bottom: 1px solid var(--hb-td-border); background: #fff; transition: background .15s; }
 .hb-row:hover { background: var(--hb-row-hover); }
 .hb-op { padding: 0 10px; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.hb-op-name { font-size: 16px; line-height: 1.4; color: var(--hb-text-table); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb-op-name { font-size: 16px; line-height: 1.4; color: var(--hb-text-table); overflow-wrap: anywhere; }
 .hb-op-sub { font-size: 12px; line-height: 1.3; color: var(--hb-muted2); white-space: nowrap; }
 
 .hb-cell {
@@ -266,25 +267,11 @@ table.hb-sheet .km-src-icon { margin-right: 4px; font-size: 12px; color: var(--h
 .rpt-errlist-item { display: block; width: 100%; padding: 3px 8px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 14px; color: var(--hb-danger-text); text-align: left; cursor: pointer; }
 .rpt-errlist-item:hover, .rpt-errlist-item:focus-visible { background: rgba(253,108,123,.12); outline: 0; }
 
-/* ===== 票證資料：業者 × 季總覽、單季內頁 ===== */
-.hb-grid-q { grid-template-columns: 160px repeat(4, minmax(150px, 1fr)) minmax(240px, 1.3fr); column-gap: 8px; min-width: 1000px; }
+/* ===== 票證資料：業者 × 月總覽（同營運月報格線，最後一欄為最新上傳）、單月內頁 ===== */
+.hb-grid-t { grid-template-columns: 250px repeat(15, 35px) minmax(200px, 320px); min-width: 1000px; }
 .hb-th-op { padding: 0 10px; }
-.hb-th-q { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.3; }
-.hb-th-q span { font-size: 12px; font-weight: 400; color: var(--hb-muted2); }
-.hb-qcell {
-  display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 4px 8px;
-  border: 2px solid transparent; border-radius: 4px; cursor: pointer; font-size: 15px; color: var(--hb-text-table);
-}
-.hb-qcell.is-static { cursor: default; }
-.hb-qcell:not(.is-static):hover, .hb-qcell:focus-visible { border-color: #658b9f; outline: 0; }
-.hb-qcell.st-notStarted, .hb-qcell.st-open { background: #f9fafb; }
-.hb-qcell.st-completed { background: #f0fdf4; }
-.hb-qcell.st-overdue { background: #fff7ed; }
-.hb-qcell.st-notStarted .hb-qcell-text { color: var(--hb-muted2); }
-.hb-qcell-text { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
-.hb-qcell-text em { font-style: normal; font-size: 12px; color: var(--hb-st-overdue-text); }
 
-.tk-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.tk-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .tk-summary > div { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border: 1px solid var(--hb-box-border); border-radius: var(--hb-card-radius); }
 .tk-summary span { font-size: 14px; color: var(--hb-muted2); }
 .tk-summary strong { font-size: 20px; font-weight: 500; color: var(--hb-text-table); }
@@ -329,6 +316,12 @@ table.hb-sheet .km-src-icon { margin-right: 4px; font-size: 12px; color: var(--h
 .mt-months .hb-seg button { position: relative; flex: none; min-width: 48px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 .mt-dot { position: absolute; top: 3px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--hb-accent); }
 .mt-note { margin: -4px 0 0; font-size: 14px; }
+
+/* 業者子分頁（市區公車、幸福巴士 1.0／2.0）：比單位分頁小一級，下方加分隔線 */
+.mt-ops { display: flex; flex-wrap: wrap; gap: 4px 8px; padding-bottom: 8px; border-bottom: 1px solid var(--hb-box-border); }
+.mt-op { position: relative; padding: 4px 12px; font-size: 15px; }
+.mt-op .mt-dot { top: 4px; right: 3px; }
+.mt-op-name { margin: 0; font-size: 18px; font-weight: 700; color: var(--hb-text-strong); }
 .rpt-progress[hidden] { display: none; }
 
 /* 任務項目 */
@@ -379,7 +372,7 @@ a.mt-link .bi { font-size: 11px; }
 
 @media print {
   body { padding-bottom: 0; }
-  #toolbar, #sidebar, .hb-tabbar, .mt-months .hb-seg, .mt-links { display: none !important; }
+  #toolbar, #sidebar, .hb-tabbar, .mt-months .hb-seg, .mt-links, .mt-ops { display: none !important; }
   .app { display: block; min-height: 0; }
   #main { padding: 0; }
   .hb-card { box-shadow: none; padding: 0; }

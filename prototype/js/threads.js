@@ -10,7 +10,7 @@
 //                mentions: [名稱], attachments: [{ kind: 'file'|'link', name, type, size, url }],
 //                reactions: { '👍': [使用者名稱] }, replyTo: 被回覆的留言 id | null }]
 // }
-// text 可用簡單標記：**粗體**、*斜體*、`程式碼`、```程式碼區塊```、「- 」清單、「1. 」編號清單、@名稱。
+// text 為純文字（不支援粗體、斜體等格式）；網址自動成連結，@名稱會標色。
 
 import { can } from './permissions.js';
 

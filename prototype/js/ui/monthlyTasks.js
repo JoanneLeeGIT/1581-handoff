@@ -1,4 +1,4 @@
-// 系統資訊 → 每月任務：總覽＋各單位分頁，依月份列出應辦事項，可勾選完成。
+// 系統資訊 → 每月任務：總覽＋各單位分頁（有業者的單位再分業者子分頁），依月份列出應辦事項，可勾選完成。
 // 樣式只用 huabus-theme.css／app.css 既有元件（分頁 .hb-tab、分段 .hb-seg、訊息 .hb-msg、表格 .tk-table、連結 .hb-anchor）。
 import {
   PAGES, pageHref, FREQ, ROLES, RHYTHM, PAGE_MAP, COMMON_TIPS,
@@ -46,8 +46,8 @@ export function renderOverview(root) {
 }
 
 /* ---------- 單位分頁 ---------- */
-function itemHTML(role, item, index, year, month) {
-  const k = doneKey(year, month, role.id, index);
+function itemHTML(role, item, index, year, month, opId) {
+  const k = doneKey(year, month, role.id, index, opId);
   const done = store.get(k) === '1';
   const id = `mt-${role.id}-${index}`;
   const tags = [
@@ -85,16 +85,31 @@ function yearTable(role, month) {
   </section>`;
 }
 
+/** 業者子分頁：顯示該月有沒有必做事項未完成（橘點），只有一家業者（業者本人登入）時不顯示切換列 */
+function opTabsHTML(ops, opId, pendingFor) {
+  if (ops.length < 2) return '';
+  return `<div class="mt-ops" role="tablist" aria-label="業者">${ops.map((o) => {
+    const p = pendingFor(o.id);
+    const label = `${o.name}${p ? '（有必做事項尚未完成）' : ''}`;
+    return `<button type="button" class="hb-tab mt-op${o.id === opId ? ' active' : ''}" role="tab" aria-selected="${o.id === opId}" data-op="${esc(o.id)}" aria-label="${esc(label)}" title="${esc(label)}">${esc(o.name)}${p ? '<span class="mt-dot" aria-hidden="true"></span>' : ''}</button>`;
+  }).join('')}</div>`;
+}
+
 /**
  * 單位分頁。year／currentMonth 來自模擬今天；month 是目前選看的月份（onMonth 切換）。
+ * ops：這個單位可看的業者（沒有就是空陣列）；opId 目前選看的業者（onOp 切換），勾選紀錄依業者分開。
  */
-export function renderRole(root, { roleId, year, month, currentMonth, onMonth }) {
+export function renderRole(root, { roleId, year, month, currentMonth, onMonth, ops = [], opId = null, onOp }) {
   const role = ROLES.find((r) => r.id === roleId);
   const groups = tasksForMonth(role, month);
-  const pending = (m) => hasPending(role, m, currentMonth, (i) => store.get(doneKey(year, m, role.id, i)) === '1');
+  const pendingOf = (m, op) => hasPending(role, m, currentMonth, (i) => store.get(doneKey(year, m, role.id, i, op)) === '1');
+  const pending = (m) => pendingOf(m, opId);
+  const op = ops.find((o) => o.id === opId);
 
   root.innerHTML = `
     ${msg(esc(role.intro))}
+    ${opTabsHTML(ops, opId, (id) => pendingOf(month, id))}
+    ${op ? `<h2 class="mt-op-name">${esc(op.name)}</h2>` : ''}
     <div class="mt-bar">
       <div class="mt-months">
         <span class="hb-label mt-months-label" id="mt-months-label">${year} 年</span>
@@ -111,14 +126,15 @@ export function renderRole(root, { roleId, year, month, currentMonth, onMonth })
         <span class="rpt-progress-num"></span>
       </div>
     </div>
-    <p class="hb-desc mt-note">每月 1 日發出資料收集通知，10 日截止，資料於月底前上架。黃色標籤為該月份的辦理時點；橘色圓點表示該月尚有必做事項未完成。</p>
+    <p class="hb-desc mt-note">每月 1 日發出資料收集通知；營運月報、票證資料 15 日截止，車輛資料 10 日截止（幸福巴士 1.0、市區公車建議同時確認班次明細）。月報於當月月底上架，票證資料每季於 2、5、8、11 月底上架。黃色標籤為該月份的辦理時點；橘色圓點表示該月尚有必做事項未完成。</p>
     ${groups.map((g) => `<section class="mt-group">
       <h2 class="mt-group-head">${freqTag(g.f)}<span>${g.list.length} 項</span></h2>
-      <ul class="mt-list">${g.list.map((x) => itemHTML(role, x.item, x.index, year, month)).join('')}</ul>
+      <ul class="mt-list">${g.list.map((x) => itemHTML(role, x.item, x.index, year, month, opId)).join('')}</ul>
     </section>`).join('') || '<div class="hb-empty">本月無應辦事項。</div>'}
     ${yearTable(role, month)}`;
 
   root.querySelectorAll('.hb-seg button').forEach((b) => { b.onclick = () => onMonth(Number(b.dataset.m)); });
+  root.querySelectorAll('.mt-op').forEach((b) => { b.onclick = () => onOp(b.dataset.op); });
   root.querySelectorAll('.mt-item input').forEach((c) => {
     c.onchange = () => {
       store.set(c.dataset.k, c.checked ? '1' : '0');
@@ -132,6 +148,15 @@ export function renderRole(root, { roleId, year, month, currentMonth, onMonth })
       const label = `${month} 月${p ? '（有必做事項尚未完成）' : ''}`;
       btn.setAttribute('aria-label', label);
       btn.title = label;
+      // 更新目前業者子分頁的橘點
+      const ob = root.querySelector(`.mt-op[data-op="${opId}"]`);
+      if (ob) {
+        ob.querySelector('.mt-dot')?.remove();
+        if (p) ob.insertAdjacentHTML('beforeend', '<span class="mt-dot" aria-hidden="true"></span>');
+        const ol = `${op.name}${p ? '（有必做事項尚未完成）' : ''}`;
+        ob.setAttribute('aria-label', ol);
+        ob.title = ol;
+      }
     };
   });
   updateProgress(root);

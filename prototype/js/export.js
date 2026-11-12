@@ -3,6 +3,7 @@
 
 import { GROUPS, STAT_KEYS, normalizeRouteStats } from './serviceMode.js';
 import { getOfficialVersion } from './versions.js';
+import { fuelOf, vehicleDaysOf } from './reportLayout.js';
 
 const round2 = (x) => Math.round((x + Number.EPSILON) * 100) / 100;
 const dash = (n) => (n === 0 ? '-' : n);
@@ -112,8 +113,9 @@ export function buildOperatorSheets(entries, yearMonth) {
   const vRows = done.map((e) => {
     const v = e.operator.vehicles ?? {};
     const c = e.version.fields?.charter ?? {};
+    const f = fuelOf(e.version.fields, e.operator);
     return [e.operator.name, v.total ?? 0, v.bus ?? 0, v.minibus ?? 0, v.electric ?? 0, v.accessible ?? 0, v.lowFloor ?? 0,
-      v.vehicleDays ?? 0, v.diesel ?? 0, v.gasoline ?? 0, v.lpg ?? 0, c.passengers ?? 0, c.vehicleDays ?? 0];
+      vehicleDaysOf(e.version.fields, e.operator) ?? 0, f.diesel ?? 0, f.gasoline ?? 0, f.lpg ?? 0, c.passengers ?? 0, c.vehicleDays ?? 0];
   });
   const vTotal = ['總計', ...VEHICLE_HEADER.slice(1).map((_, i) => round2(vRows.map((r) => r[i + 1]).reduce(add, 0)))];
   const rows2 = [vTotal, ...vRows];

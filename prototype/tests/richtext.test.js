@@ -2,26 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { renderRich, plainText } from '../js/richtext.js';
 
-test('escapes HTML before formatting', () => {
-  const html = renderRich('<img src=x onerror=alert(1)> **粗**');
+test('escapes HTML', () => {
+  const html = renderRich('<img src=x onerror=alert(1)>');
   assert.ok(!html.includes('<img'));
   assert.ok(html.includes('&lt;img'));
-  assert.ok(html.includes('<strong>粗</strong>'));
 });
 
-test('bold, italic, inline code, links', () => {
-  const html = renderRich('**粗體** *斜體* `a*b*c` https://example.com/x。');
-  assert.ok(html.includes('<strong>粗體</strong>'));
-  assert.ok(html.includes('<em>斜體</em>'));
-  assert.ok(html.includes('<code>a*b*c</code>'), 'no formatting inside code');
-  assert.ok(html.includes('href="https://example.com/x"'), 'trailing punctuation not in link');
+test('plain text: markup symbols are shown as typed', () => {
+  const html = renderRich('**粗體** *斜體* `code`\n- 項目\n```x```');
+  assert.ok(!/<(strong|em|code|pre|ul|ol|li)>/.test(html));
+  assert.ok(html.includes('**粗體** *斜體* `code`<br>- 項目<br>```x```'));
 });
 
-test('lists and code blocks', () => {
-  const html = renderRich('說明：\n- 第一\n- 第二\n1. 甲\n2. 乙\n```\n<b>x</b>\n**y**\n```');
-  assert.ok(html.includes('<ul><li>第一</li><li>第二</li></ul>'));
-  assert.ok(html.includes('<ol><li>甲</li><li>乙</li></ol>'));
-  assert.ok(html.includes('<pre><code>&lt;b&gt;x&lt;/b&gt;\n**y**</code></pre>'));
+test('line breaks and paragraphs', () => {
+  assert.equal(renderRich('甲\n乙\n\n丙'), '<p>甲<br>乙</p><p>丙</p>');
+});
+
+test('links, trailing punctuation excluded', () => {
+  const html = renderRich('見 https://example.com/x。');
+  assert.ok(html.includes('href="https://example.com/x"'));
 });
 
 test('mentions are highlighted only for known names', () => {
@@ -30,6 +29,6 @@ test('mentions are highlighted only for known names', () => {
   assert.ok(!html.includes('@路人</span>'));
 });
 
-test('plainText strips markup', () => {
-  assert.equal(plainText('**a** *b*\n- `c`'), 'a b c');
+test('plainText collapses whitespace only', () => {
+  assert.equal(plainText('**a**\n- b  c'), '**a** - b c');
 });

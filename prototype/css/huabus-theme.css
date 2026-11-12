@@ -484,25 +484,17 @@ html::-webkit-scrollbar-track { background: transparent; }
 html::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: var(--hb-scroll-thumb) padding-box; }
 html::-webkit-scrollbar-thumb:hover { background-color: var(--hb-scroll-thumb-hover); }
 
-/* --- 任務留言：編輯器、富文本、提及、附件、表情回應、針對留言回覆 --- */
+/* --- 任務留言：編輯器、@ 提及、表情回應、針對留言回覆 --- */
 .hb-iconbtn.is-xs { width: 24px; height: 24px; font-size: 14px; border-radius: 6px; }
 .hb-badge { flex: none; padding: 0 6px; border-radius: 4px; font-size: 12px; line-height: 20px; background: var(--hb-sheet-head); color: var(--hb-muted2); }
 .hb-badge.is-mention { background: #fff1e8; color: #c2410c; font-weight: 500; }
 .hb-thread-top .hb-badge + .hb-iconbtn, .hb-thread-top .hb-anchor + .hb-iconbtn { margin-left: auto; }
 
-/* 編輯器：外框包住工具列與輸入框，聚焦時整框亮起 */
+/* 編輯器：純文字輸入框，聚焦時邊框亮起 */
 .hb-editor { position: relative; border: 1px solid var(--hb-box-border); border-radius: 8px; background: #fff; transition: border-color .15s ease, box-shadow .15s ease; }
 .hb-editor:focus-within { border-color: rgba(255,106,61,.55); box-shadow: 0 0 0 3px rgba(255,106,61,.12); }
-.hb-toolbar { display: flex; align-items: center; gap: 2px; padding: 4px 6px; border-bottom: 1px solid var(--hb-td-border); flex-wrap: wrap; }
-.hb-tool {
-  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px;
-  background: transparent; color: var(--hb-muted2); font-size: 16px; cursor: pointer;
-}
-.hb-tool:hover { background: var(--hb-row-hover); color: var(--hb-text-strong); }
-.hb-tool:focus-visible { outline: 2px solid var(--hb-focus); outline-offset: 1px; }
-.hb-tool-sep { width: 1px; height: 16px; margin: 0 2px; background: var(--hb-box-border); }
 .hb-editor-input {
-  display: block; width: 100%; min-height: 64px; max-height: 260px; padding: 8px 10px; border: 0; border-radius: 0 0 8px 8px;
+  display: block; width: 100%; min-height: 64px; max-height: 260px; padding: 8px 10px; border: 0; border-radius: 8px;
   background: transparent; font: inherit; font-size: 15px; line-height: 1.55; color: var(--hb-text); resize: none; outline: 0;
 }
 .hb-composer.is-compact .hb-editor-input { min-height: 44px; }
@@ -525,13 +517,6 @@ html::-webkit-scrollbar-thumb:hover { background-color: var(--hb-scroll-thumb-ho
 .hb-thread-msg.is-mentioned > .hb-thread-body { border-left: 2px solid var(--hb-accent); padding-left: 8px; margin-left: 28px; }
 .hb-thread-msg.is-mentioned > .hb-thread-body .hb-rich { margin-left: 0; }
 
-/* 連結輸入列與待送附件 */
-.hb-linkrow { display: flex; gap: 6px; flex-wrap: wrap; }
-.hb-linkrow[hidden] { display: none; }
-.hb-linkrow .hb-input { flex: 2 1 160px; padding: 5px 10px; font-size: 14px; }
-.hb-linkrow .hb-linkrow-name { flex: 1 1 100px; }
-.hb-att-pending { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.hb-att-pending[hidden] { display: none; }
 
 /* 留言內容（富文本） */
 .hb-thread-body { margin-left: 30px; display: flex; flex-direction: column; gap: 6px; }
@@ -570,26 +555,6 @@ html::-webkit-scrollbar-thumb:hover { background-color: var(--hb-scroll-thumb-ho
 .hb-thread-msg:hover .hb-msg-actions, .hb-msg-actions:focus-within { opacity: 1; pointer-events: auto; }
 @media (hover: none) { .hb-msg-actions { position: static; opacity: 1; pointer-events: auto; border: 0; box-shadow: none; } }
 
-/* 附件 */
-.hb-atts { display: flex; flex-direction: column; gap: 6px; }
-.hb-att-imgs { display: flex; flex-wrap: wrap; gap: 6px; }
-.hb-att-img { width: 88px; height: 66px; padding: 0; border: 1px solid var(--hb-box-border); border-radius: 6px; overflow: hidden; background: var(--hb-sheet-head); cursor: zoom-in; }
-.hb-att-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.hb-att {
-  display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 8px; border: 1px solid var(--hb-box-border); border-radius: 8px;
-  background: #fff; font-size: 13px; color: var(--hb-text); text-decoration: none;
-}
-a.hb-att:hover { border-color: var(--hb-focus); background: var(--hb-row-hover); }
-.hb-att > .bi:first-child { font-size: 16px; color: var(--hb-info); }
-.hb-att .bi-file-earmark-pdf { color: #d92d20 !important; }
-.hb-att .bi-file-earmark-spreadsheet { color: #079455 !important; }
-.hb-att img { width: 22px; height: 22px; object-fit: cover; border-radius: 4px; }
-.hb-att-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hb-att-size { flex: none; color: var(--hb-muted2); font-size: 12px; }
-.hb-att-go { flex: none; font-size: 12px; color: var(--hb-muted2); }
-.hb-att.is-pending { padding-right: 4px; background: var(--hb-sheet-head); }
-.hb-att-full { display: block; max-width: 100%; margin: 0 auto; border-radius: 6px; }
-
 /* 表情回應 */
 .hb-reacts { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .hb-react {
@@ -605,3 +570,6 @@ a.hb-att:hover { border-color: var(--hb-focus); background: var(--hb-row-hover);
 .hb-react-pick button { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: transparent; font-size: 17px; cursor: pointer; transition: transform .12s ease, background-color .12s ease; }
 .hb-react-pick button:hover { background: var(--hb-row-hover); transform: scale(1.18); }
 @media (prefers-reduced-motion: reduce) { .hb-react-pick button:hover { transform: none; } }
+
+/* 路線別表格：路線編號下方的路線名稱 */
+.hb-route-name { display: block; max-width: 9em; font-size: 12px; font-weight: 400; line-height: 1.3; color: var(--hb-muted2); white-space: normal; }

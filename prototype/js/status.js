@@ -1,6 +1,7 @@
 // Pure month-status rules (no DOM). See specs/001-operations-overview-reporting/contracts/status-transitions.md
 
 import { can } from './permissions.js';
+import { SCHEDULE, windowStatus } from './schedule.js';
 
 export const REVIEW_STATES = ['none', 'reviewing', 'needsUpdate', 'completed', 'changeRequested'];
 
@@ -14,22 +15,20 @@ export const STATUS = {
   changeRequested: '申請變更',
 };
 
-/** Submission deadline: the 10th is still on time, overdue shows from the 11th. */
-export const DEADLINE_DAY = 10;
-
-const pad = (n) => String(n).padStart(2, '0');
+/** 截止日（每月幾日）；時程設定集中在 schedule.js。 */
+export const DEADLINE_DAY = SCHEDULE.report.deadlineDay;
 
 /**
+ * 依資料月份：還沒送出時，依 schedule.js 的填報期間（例：10 月資料 11/1–11/15）判斷未開始／開放填報／逾期未繳。
  * @param report {reviewState}|null
- * @param yearMonth 'YYYY-MM'
+ * @param yearMonth 'YYYY-MM'（資料月份）
  * @param today 'YYYY-MM-DD'
  */
 export function getStatus(report, yearMonth, today) {
   const rs = report?.reviewState ?? 'none';
   if (!REVIEW_STATES.includes(rs)) throw new Error(`invalid reviewState: ${rs}`);
   if (rs !== 'none') return rs;
-  if (today < `${yearMonth}-01`) return 'notStarted';
-  return today <= `${yearMonth}-${pad(DEADLINE_DAY)}` ? 'open' : 'overdue';
+  return windowStatus('report', yearMonth, today);
 }
 
 const TRANSITIONS = {

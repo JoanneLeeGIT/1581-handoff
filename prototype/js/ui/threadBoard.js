@@ -1,6 +1,6 @@
 // 任務留言板（取代檔案備註／檢核備註）：像 Word／Figma 的註解，標在表格的格子或整列上。
 // - 右側面板：未解決／已解決（封存）／提及我 三個分頁；每則任務可回覆，也可針對串裡某一則留言回覆。
-// - 留言支援簡單富文本、@提及、附件與雲端連結、表情符號回應（見 composer.js、../richtext.js）。
+// - 留言為純文字，可輸入 @ 標記帳號、表情符號回應；不提供附件或連結工具（見 composer.js、../richtext.js）。
 // - 縣府可標為已解決、重新開啟。
 // - 表格上：有留言的格子右上角出現小三角（未解決＝橘、已解決＝灰），點一下開啟該任務。
 // 檢視頁與填報頁共用；只重畫自己和格子標記，不會讓表格捲動位置跑掉。
@@ -8,8 +8,8 @@ import { getReport, addThread, replyToThread, setThreadState, reactToMessage, me
 import { threadsOf, openThreads, resolvedThreads, threadsMentioning, comments, canComment, canResolve, REACTIONS } from '../threads.js';
 import { renderRich, plainText } from '../richtext.js';
 import { anchorLabel } from './fields.js';
-import { esc, fmtDate, toast, showModal } from './common.js';
-import { composerHtml, bindComposer, newDraft, attIcon, fmtSize } from './composer.js';
+import { esc, fmtDate, toast } from './common.js';
+import { composerHtml, bindComposer, newDraft } from './composer.js';
 
 const PANEL_KEY = 'huabus-threads-open';
 /** 換頁重畫時保留分頁、選取中的任務與還沒送出的草稿（同一份月報）。 */
@@ -29,18 +29,6 @@ export const threadToggle = (open) =>
 
 const ROLE_TAG = { county: '縣府', operator: '業者' };
 const avatar = (m) => `<span class="hb-avatar is-${m.role}" aria-hidden="true">${m.role === 'county' ? '縣' : '業'}</span>`;
-
-function attachmentsHtml(list) {
-  if (!list?.length) return '';
-  const imgs = list.filter((a) => a.kind === 'file' && a.type?.startsWith('image/'));
-  const others = list.filter((a) => !imgs.includes(a));
-  return `<div class="hb-atts">
-    ${imgs.length ? `<div class="hb-att-imgs">${imgs.map((a) => `<button type="button" class="hb-att-img" data-view-img="${esc(a.url)}" data-name="${esc(a.name)}" title="${esc(a.name)}"><img src="${esc(a.url)}" alt="${esc(a.name)}"></button>`).join('')}</div>` : ''}
-    ${others.map((a) => (a.kind === 'link'
-      ? `<a class="hb-att" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer" title="${esc(a.url)}"><i class="bi ${attIcon(a)}"></i><span class="hb-att-name">${esc(a.name)}</span><i class="bi bi-box-arrow-up-right hb-att-go"></i></a>`
-      : `<a class="hb-att" href="${esc(a.url)}" download="${esc(a.name)}"><i class="bi ${attIcon(a)}"></i><span class="hb-att-name">${esc(a.name)}</span>${a.size ? `<span class="hb-att-size">${fmtSize(a.size)}</span>` : ''}<i class="bi bi-download hb-att-go"></i></a>`)).join('')}
-  </div>`;
-}
 
 /**
  * host：面板容器；sheets：.report-sheets（加標記、點選格子用）。
@@ -96,7 +84,7 @@ export function mountThreadBoard({ host, sheets, operator, yearMonth, session, o
     const open = t.status === 'open';
     const interactive = full && open && mayComment;
     const target = m.replyTo ? t.messages.find((x) => x.id === m.replyTo) : null;
-    const quote = target ? `<button type="button" class="hb-quote" data-jump="${esc(target.id)}" title="跳到被回覆的留言"><i class="bi bi-reply"></i><span><b>${esc(target.author)}</b>：${esc(plainText(target.text).slice(0, 40) || '（附件）')}</span></button>` : '';
+    const quote = target ? `<button type="button" class="hb-quote" data-jump="${esc(target.id)}" title="跳到被回覆的留言"><i class="bi bi-reply"></i><span><b>${esc(target.author)}</b>：${esc(plainText(target.text).slice(0, 40))}</span></button>` : '';
     const reactions = Object.entries(m.reactions ?? {}).filter(([, who]) => who.length);
     const pills = reactions.map(([emo, who]) => `<button type="button" class="hb-react${who.includes(me) ? ' is-mine' : ''}" data-react="${emo}" data-mid="${esc(m.id)}"
       title="${esc(who.join('、'))}" aria-label="${emo} ${who.length} 人：${esc(who.join('、'))}"${open && mayComment ? '' : ' disabled'}>${emo}<span>${who.length}</span></button>`).join('');
@@ -111,7 +99,6 @@ export function mountThreadBoard({ host, sheets, operator, yearMonth, session, o
     return `<li class="hb-thread-msg${mine ? ' is-mentioned' : ''}" id="msg-${esc(m.id)}">
       <div class="hb-thread-meta">${avatar(m)}<b>${esc(m.author)}</b><span class="hb-role is-${m.role}">${ROLE_TAG[m.role] ?? ''}</span><time>${fmtDate(m.at)}</time>${actions}</div>
       <div class="hb-thread-body">${quote}${m.text ? `<div class="hb-rich${full ? '' : ' is-clamped'}">${renderRich(m.text, m.mentions ?? [])}</div>` : ''}
-        ${attachmentsHtml(m.attachments)}
         ${pills || picker ? `<div class="hb-reacts">${pills}${picker}</div>` : ''}</div>
     </li>`;
   }
@@ -215,10 +202,10 @@ export function mountThreadBoard({ host, sheets, operator, yearMonth, session, o
   }
 
   const warn = (text) => toast(text, 'warning');
-  const fail = (res) => warn(res.error === 'empty' ? '請輸入留言內容或加上附件' : res.error === 'not allowed' ? '沒有權限' : `無法儲存：${res.error}`);
-  /** 送出後：附件太大存不進瀏覽器時提醒；有 @ 人時提示已通知（原型只在系統內標示，不寄信）。 */
+  const fail = (res) => warn(res.error === 'empty' ? '請輸入留言內容' : res.error === 'not allowed' ? '沒有權限' : `無法儲存：${res.error}`);
+  /** 送出後：有 @ 人時提示已通知（原型只在系統內標示，不寄信）。 */
   function afterSave(msg, okText) {
-    if (!lastSaveOk()) warn('已送出，但附件太大，瀏覽器存不下；重新整理後附件會不見。');
+    if (!lastSaveOk()) warn('已送出，但瀏覽器存不下，重新整理後這則留言會不見。');
     else toast(msg.mentions?.length ? `${okText}，已通知 ${msg.mentions.map((n) => `@${n}`).join('、')}` : okText);
   }
 
@@ -232,10 +219,10 @@ export function mountThreadBoard({ host, sheets, operator, yearMonth, session, o
     const newForm = host.querySelector('#thr-composer form');
     if (newForm) {
       bindComposer(newForm, {
-        draft: st.draft, people, onError: warn,
+        draft: st.draft, people,
         onCancel: () => { st.draft = null; render(); },
         onSubmit: (d) => {
-          const res = addThread(operator.id, yearMonth, { anchor: d.path ? { path: d.path } : null, text: d.text, attachments: d.attachments }, session);
+          const res = addThread(operator.id, yearMonth, { anchor: d.path ? { path: d.path } : null, text: d.text }, session);
           if (!res.ok) return fail(res);
           st.draft = null;
           st.active = res.thread.id;
@@ -249,10 +236,10 @@ export function mountThreadBoard({ host, sheets, operator, yearMonth, session, o
       const id = wrap.dataset.reply;
       const d = st.replies[id];
       const c = bindComposer(wrap.querySelector('form'), {
-        draft: d, people, onError: warn,
+        draft: d, people,
         onQuoteClear: () => { d.replyTo = null; render(); },
         onSubmit: () => {
-          const res = replyToThread(operator.id, yearMonth, id, { text: d.text, attachments: d.attachments, replyTo: d.replyTo }, session);
+          const res = replyToThread(operator.id, yearMonth, id, { text: d.text, replyTo: d.replyTo }, session);
           if (!res.ok) return fail(res);
           st.replies[id] = newDraft();
           afterSave(res.thread.messages.at(-1), '已回覆');
@@ -302,10 +289,6 @@ export function mountThreadBoard({ host, sheets, operator, yearMonth, session, o
       const el = host.querySelector(`#msg-${CSS.escape(b.dataset.jump)}`);
       el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       el?.classList.remove('is-flash'); void el?.offsetWidth; el?.classList.add('is-flash');
-    }));
-    // 圖片附件：放大檢視
-    host.querySelectorAll('[data-view-img]').forEach((b) => b.addEventListener('click', () => {
-      showModal({ title: esc(b.dataset.name), body: `<img class="hb-att-full" src="${esc(b.dataset.viewImg)}" alt="${esc(b.dataset.name)}">` });
     }));
   }
 

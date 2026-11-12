@@ -6,9 +6,9 @@ import { applyAction } from './status.js';
 import { addVersion } from './versions.js';
 import { can } from './permissions.js';
 import { createThread, replyThread, setThreadStatus, toggleReaction, resolveAll, openThreads, latestComment, migrateNotes } from './threads.js';
-import { isTicketFile, mergeFiles } from './ticket.js';
+import { isTicketFile, mergeFiles, needsTicket } from './ticket.js';
 
-const STATE_KEY = 'huabus-proto-state-v1';
+const STATE_KEY = 'huabus-proto-state-v2'; // v2：業者與路線改用實際名稱，舊瀏覽器資料不沿用
 const SESSION_KEY = 'huabus-proto-session';
 let state = null;
 
@@ -37,8 +37,8 @@ export async function initStore() {
     const raw = localStorage.getItem(STATE_KEY);
     if (raw) {
       state = normalize(JSON.parse(raw));
-      // 舊的瀏覽器資料還沒有票證資料：補上示範的上傳紀錄
-      if (!state.ticketUploads) { try { state.ticketUploads = (await loadSeed()).ticketUploads ?? []; } catch { state.ticketUploads = []; } }
+      // 舊的瀏覽器資料還沒有票證資料，或還是每季的紀錄（沒有 month）：換成示範的每月上傳紀錄
+      if (!state.ticketUploads || state.ticketUploads.some((u) => !u.month)) { try { state.ticketUploads = (await loadSeed()).ticketUploads ?? []; } catch { state.ticketUploads = []; } }
       persist();
       return state;
     }
@@ -248,20 +248,21 @@ export function requestChange(operatorId, yearMonth, fields, reason, session) {
   return { ok: true, report: saveReport(operatorId, yearMonth, next) };
 }
 
-// ---- 票證資料（每季上傳檔案） ----
+// ---- 票證資料（每月上傳檔案；幸福巴士暫不納入） ----
 export const getTicketUploads = () => state.ticketUploads ?? [];
 
 /**
  * 業者上傳票證資料檔案（可一次多個檔案，算同一次上傳）。原型只記錄檔名、大小、資料筆數，不保存檔案內容。
  * files：[{ fileName, size, rows }]；紀錄上的 fileName／size／rows 是整批的合計，舊畫面照樣能用。
  */
-export function addTicketUpload(operatorId, quarter, { files, note }, session) {
+export function addTicketUpload(operatorId, month, { files, note }, session) {
   if (!can(session.role, 'uploadTicket', { operatorId, ownOperatorId: session.operatorId })) return { ok: false, error: 'not allowed' };
+  if (!needsTicket(getOperator(operatorId))) return { ok: false, error: '幸福巴士暫不需提供票證資料' };
   if (!files?.length) return { ok: false, error: 'no files' };
   if (files.some((f) => !isTicketFile(f.fileName))) return { ok: false, error: '只接受 CSV 或 Excel 檔案' };
   const m = mergeFiles(files);
   const fileName = m.files.length > 1 ? `${m.files[0].fileName} 等 ${m.files.length} 個檔案` : m.files[0].fileName;
-  const rec = { operatorId, quarter, fileName, size: m.size, rows: m.rows, files: m.files, note: note?.trim() || '', uploadedAt: nowISO(), uploadedBy: userName(session) };
+  const rec = { operatorId, month, fileName, size: m.size, rows: m.rows, files: m.files, note: note?.trim() || '', uploadedAt: nowISO(), uploadedBy: userName(session) };
   state.ticketUploads = [...getTicketUploads(), rec];
   persist();
   return { ok: true, upload: rec };

@@ -113,8 +113,8 @@ export function vehicleHeaderRows() {
     { text: '電動車輛數', rowspan: 2, kind: 'sys' },
     { text: '無障礙車輛數', rowspan: 2, kind: 'sys' },
     { text: '', kind: 'sys' }, // G2：原表未標示文字（見 待確認.md）
-    { text: '行駛延日車數', rowspan: 2, kind: 'sys' },
-    { text: '燃料消耗量', colspan: 3, kind: 'sys' },
+    { text: '行駛延日車數', rowspan: 2, kind: 'op' },
+    { text: '燃料消耗量', colspan: 3, kind: 'op' },
     { text: '客運人數', colspan: 2, rowspan: 2, kind: 'op' },
     { text: '行駛延日車數', rowspan: 2, kind: 'op' },
   ];
@@ -123,13 +123,13 @@ export function vehicleHeaderRows() {
     { text: '大客車', rowspan: 2, kind: 'sys' },
     { text: '小客車', rowspan: 2, kind: 'sys' },
     { text: '低地板', rowspan: 2, kind: 'sys' },
-    { text: '柴油', kind: 'sys' },
-    { text: '汽油', kind: 'sys' },
-    { text: '液化石油氣', kind: 'sys' },
+    { text: '柴油', kind: 'op' },
+    { text: '汽油', kind: 'op' },
+    { text: '液化石油氣', kind: 'op' },
   ];
   const r5 = [
-    { text: '(輛)', kind: 'sys' }, { text: '(輛)', kind: 'sys' }, { text: '(日輛)', kind: 'sys' },
-    { text: '(公升)', kind: 'sys' }, { text: '(公升)', kind: 'sys' }, { text: '(度)', kind: 'sys' },
+    { text: '(輛)', kind: 'sys' }, { text: '(輛)', kind: 'sys' }, { text: '(日輛)', kind: 'op' },
+    { text: '(公升)', kind: 'op' }, { text: '(公升)', kind: 'op' }, { text: '(度)', kind: 'op' },
     { text: '(人次)', colspan: 2, kind: 'op' }, { text: '(日輛)', kind: 'op' },
   ];
   return [r1, r2, r3, r5];
@@ -138,13 +138,47 @@ export function vehicleHeaderRows() {
 /** 工作表 2 第 7、8 列說明。 */
 export function vehicleGuideRows() {
   return [
-    [{ text: '誰填', kind: 'sys' }, { text: '系統帶入', colspan: 10, kind: 'sys' }, { text: '業者填寫', colspan: 3, kind: 'op' }],
-    [{ text: '格式', kind: 'sys' }, { text: '—', colspan: 10, kind: 'sys' }, { text: '選填，整數', colspan: 3, kind: 'op' }],
+    [{ text: '誰填', kind: 'sys' }, { text: '系統帶入', colspan: 6, kind: 'sys' }, { text: '業者填寫，或從班次明細帶入', kind: 'op' }, { text: '業者填寫', colspan: 3, kind: 'op' }, { text: '業者填寫', colspan: 3, kind: 'op' }],
+    [{ text: '格式', kind: 'sys' }, { text: '—', colspan: 6, kind: 'sys' }, { text: '必填，整數', kind: 'op' }, { text: '必填，可有小數', colspan: 3, kind: 'op' }, { text: '選填，整數', colspan: 3, kind: 'op' }],
   ];
 }
 
-/** 工作表 2 的 B–K 欄依序對應 vehicles 的欄位。 */
-export const VEHICLE_KEYS = ['total', 'bus', 'minibus', 'electric', 'accessible', 'lowFloor', 'vehicleDays', 'diesel', 'gasoline', 'lpg'];
+/** 工作表 2 的 B–G 欄：系統帶入，對應業者基本資料 vehicles 的欄位。 */
+export const VEHICLE_KEYS = ['total', 'bus', 'minibus', 'electric', 'accessible', 'lowFloor'];
+
+/**
+ * H 欄行駛延日車數：業者每月填寫（2026-11-12 變更），存在月報 fields.vehicleDays。
+ * 改由業者填寫之前送出的舊版本沒有這個欄位，沿用當時系統帶入的 operator.vehicles.vehicleDays；
+ * 還沒有任何填報內容（fields 為空）回傳 undefined。
+ */
+export function vehicleDaysOf(fields, operator) {
+  if (!fields) return undefined;
+  if (fields.vehicleDays !== undefined) return fields.vehicleDays;
+  return operator?.vehicles?.vehicleDays ?? 0;
+}
+
+/**
+ * 班次明細算出的行駛延日車數（每天實際出車的車輛數，整月加總）。
+ * 只有有班次明細的業者才有；原型以業者基本資料的 vehicles.vehicleDays 當作班次明細的計算結果。
+ */
+export function shiftVehicleDays(operator) {
+  if (!operator?.shiftDetailAvailable) return undefined;
+  return operator.vehicles?.vehicleDays;
+}
+/** I–K 欄：燃料消耗量，業者每月填寫，存在月報 fields.fuel。 */
+export const FUEL_KEYS = ['diesel', 'gasoline', 'lpg'];
+export const FUEL_LABEL = { diesel: '柴油', gasoline: '汽油', lpg: '液化石油氣' };
+
+/**
+ * 某一版月報的燃料消耗量。改由業者填寫之前送出的舊版本沒有 fields.fuel，
+ * 這時沿用當時系統帶入的 operator.vehicles 數字；還沒有任何填報內容（fields 為空）則回傳空物件。
+ */
+export function fuelOf(fields, operator) {
+  if (!fields) return {};
+  if (fields.fuel) return fields.fuel;
+  const v = operator?.vehicles ?? {};
+  return Object.fromEntries(FUEL_KEYS.map((k) => [k, v[k] ?? 0]));
+}
 /** L–M（合併）、N 對應 charter。 */
 export const CHARTER_KEYS = ['passengers', 'vehicleDays'];
 

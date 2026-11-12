@@ -30,6 +30,8 @@ const fieldsA = {
     A1: { fixed: g({ avgSeats: 20, trips: 100, lowFloorTrips: 10, emptyTrips: 1, operatingKm: 1000.5, passengers: 500, passengerKm: 1750, revenue: 9000, eTicketPassengers: 400, eTicketRevenue: 7000 }), reserved: g({ passengers: 999 }) },
     A2: { fixed: g({ avgSeats: 30, trips: 50, lowFloorTrips: 5, emptyTrips: 0, operatingKm: 400, passengers: 200, passengerKm: 1435, revenue: 3000, eTicketPassengers: 100, eTicketRevenue: 2000 }) },
   },
+  vehicleDays: 25,
+  fuel: { diesel: 1234.5, gasoline: 10, lpg: 0 },
   charter: { passengers: 7, vehicleDays: 2 },
 };
 const fieldsB = {
@@ -117,6 +119,23 @@ test('operator sheet 2: vehicles and charter', () => {
   assert.equal(a[col(sheet2, '包車出租行駛延日車數')], 2);
   const t = sheet2.rows[0];
   assert.equal(t[col(sheet2, '營業車輛數合計')], 8);
+});
+
+test('operator sheet 2: fuel comes from the operator-filled report, old versions fall back to vehicles', () => {
+  const { sheet2 } = buildOperatorSheets(entries, '2026-10');
+  const a = sheet2.rows.find((r) => r[0] === '甲客運');
+  assert.equal(a[col(sheet2, '燃料柴油')], 1234.5, 'filled by operator, not vehicles.diesel (100)');
+  assert.equal(a[col(sheet2, '燃料汽油')], 10);
+  const b = sheet2.rows.find((r) => r[0] === '乙公所');
+  assert.equal(b[col(sheet2, '燃料柴油')], 100, 'version without fields.fuel keeps the old system value');
+});
+
+test('operator sheet 2: vehicle-days comes from the operator-filled report, old versions fall back to vehicles', () => {
+  const { sheet2 } = buildOperatorSheets(entries, '2026-10');
+  const a = sheet2.rows.find((r) => r[0] === '甲客運');
+  assert.equal(a[col(sheet2, '行駛延日車數')], 25, 'filled by operator, not vehicles.vehicleDays (30)');
+  const b = sheet2.rows.find((r) => r[0] === '乙公所');
+  assert.equal(b[col(sheet2, '行駛延日車數')], 30, 'version without fields.vehicleDays keeps the old system value');
 });
 
 test('route sheet: one row per route with both groups and a total row', () => {

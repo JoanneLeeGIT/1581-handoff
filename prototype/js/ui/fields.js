@@ -4,7 +4,7 @@
 import { GROUPS, STAT_KEYS, isGroupLocked, getEditableGroups, zeroGroup, visibleGroups } from '../serviceMode.js';
 import { FORMULA, computePassengerKm, sumValues } from '../passengerKm.js';
 import {
-  STAT_COLS, GROUP_TITLE, ATTR_KEYS, ATTR_TITLE, VEHICLE_KEYS,
+  STAT_COLS, GROUP_TITLE, ATTR_KEYS, ATTR_TITLE, VEHICLE_KEYS, FUEL_KEYS, FUEL_LABEL, fuelOf, vehicleDaysOf, shiftVehicleDays,
   routeHeaderRows, routeGuideRows, vehicleHeaderRows, vehicleGuideRows,
   routeSheetTitle, rocStatPeriod, parseCell, groupTotals, moveTarget,
 } from '../reportLayout.js';
@@ -45,6 +45,8 @@ export function anchorLabel(path) {
   }
   if (head === 'routeNotes') return `路線 ${a}｜備註`;
   if (head === 'charter') return `包車出租｜${a === 'passengers' ? '客運人數' : '行駛延日車數'}`;
+  if (head === 'fuel') return `燃料消耗量｜${FUEL_LABEL[a] ?? a}`;
+  if (head === 'vehicleDays') return '車輛情形｜行駛延日車數';
   if (head === 'vehicles') return '車輛情形';
   return path;
 }
@@ -137,7 +139,7 @@ function routeRow(r, idx, fields, { mode, changed, groups }) {
     : `<td class="note-text ${changed?.has(notePath) ? 'is-diff' : ''}"${anchorAttr(notePath)}>${esc(note)}</td>`;
   return `<tr data-route="${esc(r.routeNo)}">
     <td class="is-sys num frz frz-a">${idx + 1}</td>
-    <th scope="row" class="is-sys frz frz-b frz-last"${anchorAttr(`routes.${r.routeNo}`)} title="服務模式：${MODE_LABEL[r.serviceModes] ?? ''}">${esc(r.routeNo)}</th>
+    <th scope="row" class="is-sys frz frz-b frz-last"${anchorAttr(`routes.${r.routeNo}`)} title="${esc(r.routeName ? `${r.routeName}｜` : '')}服務模式：${MODE_LABEL[r.serviceModes] ?? ''}">${esc(r.routeNo)}${r.routeName ? `<span class="hb-route-name">${esc(r.routeName)}</span>` : ''}</th>
     <td class="is-sys od">${esc(r.origin)}</td>
     <td class="is-sys od">${esc(r.destination)}</td>
     ${sysTd(r.monthEndMileage)}
@@ -177,12 +179,26 @@ function vehicleSheet(operator, fields, { mode, changed }) {
   // 「項目」欄凍結（左右捲動時固定在左側）
   const head = vehicleHeaderRows().map((cells) => `<tr>${cells.map((x) => th(x, { freeze: x.key === 'item' ? 'frz frz-a frz-last' : '' })).join('')}</tr>`).join('');
   const guide = vehicleGuideRows().map((cells) => `<tr class="guide-row">${cells.map((x, i) => guideTd(x, i === 0 ? 'frz frz-a frz-last' : '')).join('')}</tr>`).join('');
+  const fuel = fuelOf(fields, operator);
   const vCells = VEHICLE_KEYS.map((k) => sysTd(v[k])).join('');
+  const vDays = vehicleDaysOf(fields, operator);
+  const vDaysCell = mode === 'edit'
+    ? `<td class="is-op num"${anchorAttr('vehicleDays')}><input class="hb-cellinput vdays" data-type="int" data-row="0" data-col="1" inputmode="numeric" autocomplete="off" aria-label="行駛延日車數" value="${esc(vDays ?? '')}"></td>`
+    : `<td class="num ${changed?.has('vehicleDays') ? 'is-diff' : ''}"${anchorAttr('vehicleDays')}>${fmtNum(vDays ?? 0)}</td>`;
+  const fuelCell = (k, i) => {
+    if (mode === 'edit') {
+      return `<td class="is-op num"${anchorAttr(`fuel.${k}`)}><input class="hb-cellinput fuel" data-key="${k}" data-type="dec" data-row="0" data-col="${i + 2}" inputmode="decimal" autocomplete="off" aria-label="燃料消耗量 ${FUEL_LABEL[k]}" value="${esc(fuel[k] ?? '')}"></td>`;
+    }
+    const diff = changed?.has(`fuel.${k}`);
+    return `<td class="num ${diff ? 'is-diff' : ''}"${anchorAttr(`fuel.${k}`)}>${fmtNum(fuel[k] ?? 0)}</td>`;
+  };
+  const fCells = FUEL_KEYS.map(fuelCell).join('');
+  const totalFuel = (k) => `<td class="num" data-total="fuel.${k}">${fmtNum(Number(fuel[k]) || 0)}</td>`;
   const charterCell = (k, colspan) => {
     const span = colspan ? ` colspan="${colspan}"` : '';
     if (mode === 'edit') {
       const label = k === 'passengers' ? '包車出租 客運人數' : '包車出租 行駛延日車數';
-      return `<td class="is-op num"${span}${anchorAttr(`charter.${k}`)}><input class="hb-cellinput charter" data-key="${k}" data-type="int" data-required="false" placeholder="0" data-row="0" data-col="${k === 'passengers' ? 1 : 2}" inputmode="numeric" autocomplete="off" aria-label="${label}" value="${esc(c[k] ?? '')}"></td>`;
+      return `<td class="is-op num"${span}${anchorAttr(`charter.${k}`)}><input class="hb-cellinput charter" data-key="${k}" data-type="int" data-required="false" placeholder="0" data-row="0" data-col="${k === 'passengers' ? 5 : 6}" inputmode="numeric" autocomplete="off" aria-label="${label}" value="${esc(c[k] ?? '')}"></td>`;
     }
     const diff = changed?.has(`charter.${k}`);
     return `<td class="num ${diff ? 'is-diff' : ''}"${span}${anchorAttr(`charter.${k}`)}>${fmtNum(c[k] ?? 0)}</td>`;
@@ -190,12 +206,12 @@ function vehicleSheet(operator, fields, { mode, changed }) {
   const totalCharter = (k, colspan) => `<td class="num"${colspan ? ` colspan="${colspan}"` : ''} data-total="charter.${k}">${fmtNum(Number(c[k]) || 0)}</td>`;
   return `<div class="hb-sheetwrap" tabindex="-1" role="region" aria-label="車輛情形及包車出租表格">
       <table class="hb-sheet sheet-vehicles">
-        <colgroup><col style="width:10rem">${VEHICLE_KEYS.map(() => '<col style="width:5rem">').join('')}<col style="width:3.6rem"><col style="width:3.6rem"><col style="width:6rem"></colgroup>
+        <colgroup><col style="width:10rem">${[...VEHICLE_KEYS, 'vehicleDays', ...FUEL_KEYS].map(() => '<col style="width:5rem">').join('')}<col style="width:3.6rem"><col style="width:3.6rem"><col style="width:6rem"></colgroup>
         <thead>${head}</thead>
         <tbody>
-          <tr class="is-total"><th scope="row" class="frz frz-a frz-last">總計</th>${VEHICLE_KEYS.map((k) => `<td class="num">${fmtNum(v[k] ?? 0)}</td>`).join('')}${totalCharter('passengers', 2)}${totalCharter('vehicleDays')}</tr>
+          <tr class="is-total"><th scope="row" class="frz frz-a frz-last">總計</th>${VEHICLE_KEYS.map((k) => `<td class="num">${fmtNum(v[k] ?? 0)}</td>`).join('')}<td class="num" data-total="vehicleDays">${fmtNum(Number(vDays) || 0)}</td>${FUEL_KEYS.map(totalFuel).join('')}${totalCharter('passengers', 2)}${totalCharter('vehicleDays')}</tr>
           ${guide}
-          <tr><th scope="row" class="is-sys frz frz-a frz-last"${anchorAttr('vehicles')}>${esc(operator.name)}</th>${vCells}${charterCell('passengers', 2)}${charterCell('vehicleDays')}</tr>
+          <tr><th scope="row" class="is-sys frz frz-a frz-last"${anchorAttr('vehicles')}>${esc(operator.name)}</th>${vCells}${vDaysCell}${fCells}${charterCell('passengers', 2)}${charterCell('vehicleDays')}</tr>
         </tbody>
       </table>
     </div>`;
@@ -303,6 +319,16 @@ export function recompute(root, operator) {
       if (cell) cell.textContent = fmtNum(sum);
     }
   }
+  root.querySelectorAll('input.vdays').forEach((el) => {
+    const p = parseCell('int', el.value);
+    const cell = root.querySelector('[data-total="vehicleDays"]');
+    if (cell) cell.textContent = fmtNum(p.ok ? p.value : 0);
+  });
+  root.querySelectorAll('input.fuel').forEach((el) => {
+    const p = parseCell('dec', el.value);
+    const cell = root.querySelector(`[data-total="fuel.${el.dataset.key}"]`);
+    if (cell) cell.textContent = fmtNum(p.ok ? p.value : 0);
+  });
   root.querySelectorAll('input.charter').forEach((el) => {
     const p = parseCell('int', el.value, { required: false });
     const cell = root.querySelector(`[data-total="charter.${el.dataset.key}"]`);
@@ -345,13 +371,19 @@ export function collectFields(root, operator) {
     }
     routeNotes[r.routeNo] = root.querySelector(`.route-note[data-route="${CSS.escape(r.routeNo)}"]`)?.value.trim() ?? '';
   }
+  const vDaysEl = root.querySelector('input.vdays');
+  const vehicleDays = vDaysEl ? check(vDaysEl, '行駛延日車數') : undefined;
+  const fuel = {};
+  root.querySelectorAll('input.fuel').forEach((el) => {
+    fuel[el.dataset.key] = check(el, el.getAttribute('aria-label'));
+  });
   const charter = {};
   root.querySelectorAll('input.charter').forEach((el) => {
     charter[el.dataset.key] = check(el, el.getAttribute('aria-label'));
   });
   return messages.length
     ? { ok: false, errors: messages.length, first, messages, els }
-    : { ok: true, fields: { routes, routeNotes, charter } };
+    : { ok: true, fields: { routes, routeNotes, vehicleDays, fuel, charter } };
 }
 
 /**
@@ -377,6 +409,15 @@ export function importShiftDetail(root, operator) {
       set('trips', d.trips); set('lowFloorTrips', d.lowFloorTrips); set('operatingKm', d.operatingKm);
       if (withPassengers) { set('passengers', d.passengers); set('emptyTrips', d.emptyTrips); }
     }
+  }
+  // 車輛情形 H 欄：行駛延日車數
+  const vDays = shiftVehicleDays(operator);
+  const vDaysEl = root.querySelector('input.vdays');
+  if (vDaysEl && vDays !== undefined && vDaysEl.value !== String(vDays)) {
+    log.push({ el: vDaysEl, prev: vDaysEl.value, next: String(vDays) });
+    vDaysEl.value = vDays;
+    validateInput(vDaysEl);
+    vDaysEl.closest('td')?.classList.add('is-filled');
   }
   recompute(root, operator);
   const undo = () => {
@@ -434,7 +475,7 @@ export function bindSheetInteractions(root, operator, onChange) {
     onChange?.();
   });
   root.addEventListener('focusout', (e) => {
-    if (e.target.matches('input.stat, input.charter')) validateInput(e.target);
+    if (e.target.matches('input.stat, input.vdays, input.fuel, input.charter')) validateInput(e.target);
   });
   root.addEventListener('keydown', (e) => {
     const el = e.target;

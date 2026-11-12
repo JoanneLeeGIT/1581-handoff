@@ -1,8 +1,12 @@
-// 票證資料（每季上傳檔案，不是線上填報）的純函式規則（no DOM）。
-// 每季資料在季結束後的下一個月 1–15 日間上傳：第 1 季 → 4 月、第 2 季 → 7 月、第 3 季 → 10 月、第 4 季 → 隔年 1 月。
-// 15 日前未上傳，16 日起顯示逾期；次月底由縣府上架（只有票證資料，準點率由 THI 另外計算）。
+// 票證資料（每月上傳檔案，不是線上填報）的純函式規則（no DOM）。
+// 每月資料在下個月 1–15 日間上傳（例：10 月資料 → 11/1–11/15）；15 日前未上傳，16 日起顯示逾期。
+// 上架每季一次：季結束後的次月底（2、5、8、11 月底）上架該季資料（第 1 季 → 5 月底、第 2 季 → 8 月底、第 3 季 → 11 月底、第 4 季 → 隔年 2 月底）。
+// 只有票證資料，準點率由 THI 另外計算。幸福巴士暫不納入票證資料。
 
-export const TICKET_DEADLINE_DAY = 15;
+import { SCHEDULE, submitWindow, windowStatus, addMonths } from './schedule.js';
+
+/** 截止日（每月幾日）；時程設定集中在 schedule.js。 */
+export const TICKET_DEADLINE_DAY = SCHEDULE.ticket.deadlineDay;
 
 export const TICKET_STATUS = {
   notStarted: '未開始',
@@ -11,66 +15,53 @@ export const TICKET_STATUS = {
   completed: '已上傳',
 };
 
-const pad = (n) => String(n).padStart(2, '0');
+/** 哪些業者要上傳票證資料：幸福巴士暫不納入。 */
+export const needsTicket = (op) => Boolean(op) && op.type !== 'happybus';
 
-/** '2026-Q3' → { year: 2026, q: 3 } */
-export function parseQuarter(key) {
-  const m = /^(\d{4})-Q([1-4])$/.exec(key ?? '');
-  if (!m) return null;
-  return { year: Number(m[1]), q: Number(m[2]) };
+/** 'YYYY-MM' → { year, month }；格式不對回傳 null */
+export function parseMonth(key) {
+  const m = /^(\d{4})-(\d{2})$/.exec(key ?? '');
+  if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return null;
+  return { year: Number(m[1]), month: Number(m[2]) };
 }
 
-export const quarterKey = (year, q) => `${year}-Q${q}`;
 
-export const quartersOf = (year) => [1, 2, 3, 4].map((q) => quarterKey(year, q));
-
-/** 季的月份範圍文字：'7–9 月' */
-export function quarterMonths(key) {
-  const { q } = parseQuarter(key);
-  return `${q * 3 - 2}–${q * 3} 月`;
+/** '2026-10' → '2026 年 10 月' */
+export function monthLabel(key) {
+  const { year, month } = parseMonth(key);
+  return `${year} 年 ${month} 月`;
 }
 
-export function quarterLabel(key) {
-  const { year, q } = parseQuarter(key);
-  return `${year} 年第 ${q} 季（${quarterMonths(key)}）`;
-}
-
-/** 這一季要在哪個月上傳（季結束後的下一個月）：{ year, month } */
-export function dueMonth(key) {
-  const { year, q } = parseQuarter(key);
-  const m = q * 3 + 1; // 4, 7, 10, 13
-  return m > 12 ? { year: year + 1, month: m - 12 } : { year, month: m };
-}
+/** 這個月的資料要在哪個月上傳（依 schedule.js，目前是下個月）：{ year, month } */
+export const dueMonth = (key) => addMonths(key, SCHEDULE.ticket.monthsAfter);
 
 /** 上傳期間：{ from: 'YYYY-MM-01', to: 'YYYY-MM-15' } */
-export function dueWindow(key) {
-  const { year, month } = dueMonth(key);
-  return { from: `${year}-${pad(month)}-01`, to: `${year}-${pad(month)}-${pad(TICKET_DEADLINE_DAY)}` };
+export const dueWindow = (key) => submitWindow('ticket', key);
+
+/** 月結束的隔天起就有完整資料，可以上傳。 */
+export const availableFrom = (key) => dueWindow(key).from;
+
+/** 這個月的資料在哪個月底上架：所屬季結束後的第二個月（上傳月的次月）。{ year, month } */
+export function publishMonth(key) {
+  const { month } = parseMonth(key);
+  const quarterEnd = Math.ceil(month / 3) * 3;
+  return addMonths(key, quarterEnd - month + 2);
 }
 
-/** 季結束的隔天起就有完整資料，可以先上傳（不必等到上傳期間）。 */
-export function availableFrom(key) {
-  const { year, q } = parseQuarter(key);
-  const m = q * 3 + 1;
-  return m > 12 ? `${year + 1}-01-01` : `${year}-${pad(m)}-01`;
-}
-
-/** 某業者某季的上傳紀錄，新的在前。 */
+/** 某業者某月的上傳紀錄，新的在前。 */
 export function uploadsFor(uploads, operatorId, key) {
   return (uploads ?? [])
-    .filter((u) => u.operatorId === operatorId && u.quarter === key)
+    .filter((u) => u.operatorId === operatorId && u.month === key)
     .sort((a, b) => String(b.uploadedAt).localeCompare(String(a.uploadedAt)));
 }
 
 /**
- * 季狀態：有上傳紀錄＝已上傳；否則依日期：上傳月 1 日前＝未開始、1–15 日＝開放上傳、16 日起＝逾期未繳。
+ * 月狀態：有上傳紀錄＝已上傳；否則依日期：下個月 1 日前＝未開始、1–15 日＝開放上傳、16 日起＝逾期未繳。
  * today 'YYYY-MM-DD'
  */
 export function getTicketStatus(list, key, today) {
   if (list?.length) return 'completed';
-  const w = dueWindow(key);
-  if (today < w.from) return 'notStarted';
-  return today <= w.to ? 'open' : 'overdue';
+  return windowStatus('ticket', key, today);
 }
 
 /** 是否晚於期限上傳（用上傳時間的日期比對，台灣時間）。 */
@@ -84,7 +75,7 @@ export function localDate(iso) {
   return d.toISOString().slice(0, 10);
 }
 
-/** 可以上傳的時機：季已結束（含逾期後補傳、已上傳後更新）。 */
+/** 可以上傳的時機：該月已結束（含逾期後補傳、已上傳後更新）。 */
 export const canUploadNow = (key, today) => today >= availableFrom(key);
 
 /** 從試算表的列（陣列的陣列）計算資料筆數：略過空白列，第一列視為表頭。 */

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   routeHeaderRows, routeGuideRows, vehicleHeaderRows, vehicleGuideRows, checkGrid,
   ROUTE_SHEET_COLS, VEHICLE_SHEET_COLS, STAT_COLS, rocStatPeriod, routeSheetTitle,
-  parseCell, groupTotals, moveTarget, routeSheetCols,
+  parseCell, groupTotals, moveTarget, routeSheetCols, fuelOf, FUEL_KEYS, VEHICLE_KEYS, vehicleDaysOf, shiftVehicleDays,
 } from '../js/reportLayout.js';
 import { STAT_KEYS, zeroGroup, visibleGroups } from '../js/serviceMode.js';
 
@@ -56,6 +56,46 @@ test('visibleGroups：沒有路線用到的組別不顯示', () => {
 test('工作表 2：A–N 共 14 欄，表頭與說明列填滿', () => {
   assert.equal(checkGrid(vehicleHeaderRows(), VEHICLE_SHEET_COLS).ok, true);
   for (const row of vehicleGuideRows()) assert.equal(checkGrid([row], VEHICLE_SHEET_COLS).ok, true);
+});
+
+test('工作表 2：燃料消耗量改由業者填寫', () => {
+  const [r1, r2, r3, r5] = vehicleHeaderRows();
+  assert.equal(r2.find((c) => c.text === '燃料消耗量').kind, 'op');
+  assert.deepEqual(r3.filter((c) => ['柴油', '汽油', '液化石油氣'].includes(c.text)).map((c) => c.kind), ['op', 'op', 'op']);
+  const [who] = vehicleGuideRows();
+  assert.deepEqual(who.map((c) => [c.text, c.colspan ?? 1]), [['誰填', 1], ['系統帶入', 6], ['業者填寫，或從班次明細帶入', 1], ['業者填寫', 3], ['業者填寫', 3]]);
+  assert.equal(VEHICLE_KEYS.length + 1 + FUEL_KEYS.length, 10);
+  assert.equal(r1.length, 3);
+  assert.deepEqual(r5.slice(3, 6).map((c) => c.kind), ['op', 'op', 'op']);
+});
+
+test('fuelOf：有填報用填報值、舊版本沿用系統值、尚未填報為空', () => {
+  const op = { vehicles: { diesel: 50, gasoline: 2, lpg: 0 } };
+  assert.deepEqual(fuelOf({ fuel: { diesel: 9, gasoline: 0, lpg: 1 } }, op), { diesel: 9, gasoline: 0, lpg: 1 });
+  assert.deepEqual(fuelOf({ routes: {} }, op), { diesel: 50, gasoline: 2, lpg: 0 });
+  assert.deepEqual(fuelOf(undefined, op), {});
+});
+
+test('工作表 2：行駛延日車數改由業者填寫', () => {
+  const [, r2, , r5] = vehicleHeaderRows();
+  assert.equal(r2.find((c) => c.text === '行駛延日車數').kind, 'op');
+  assert.equal(r5[2].kind, 'op');
+  assert.equal(VEHICLE_KEYS.includes('vehicleDays'), false);
+  const [, fmt] = vehicleGuideRows();
+  assert.equal(fmt[2].text, '必填，整數');
+});
+
+test('vehicleDaysOf：有填報用填報值、舊版本沿用系統值、尚未填報為 undefined', () => {
+  const op = { vehicles: { vehicleDays: 218 } };
+  assert.equal(vehicleDaysOf({ vehicleDays: 200 }, op), 200);
+  assert.equal(vehicleDaysOf({ vehicleDays: 0 }, op), 0);
+  assert.equal(vehicleDaysOf({ routes: {} }, op), 218);
+  assert.equal(vehicleDaysOf(undefined, op), undefined);
+});
+
+test('shiftVehicleDays：只有有班次明細的業者才能帶入', () => {
+  assert.equal(shiftVehicleDays({ shiftDetailAvailable: true, vehicles: { vehicleDays: 218 } }), 218);
+  assert.equal(shiftVehicleDays({ shiftDetailAvailable: false, vehicles: { vehicleDays: 218 } }), undefined);
 });
 
 test('checkGrid 會抓出欄數不符或重疊', () => {

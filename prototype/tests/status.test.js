@@ -5,12 +5,22 @@ import { getStatus, applyAction, STATUS } from '../js/status.js';
 const OP = 'op_a';
 const ctx = (extra = {}) => ({ operatorId: OP, ownOperatorId: OP, ...extra });
 
-test('time-based status: 10th is still on time, 11th is overdue', () => {
-  assert.equal(getStatus(null, '2026-12', '2026-11-03'), 'notStarted');
-  assert.equal(getStatus(null, '2026-11', '2026-11-01'), 'open');
-  assert.equal(getStatus(null, '2026-11', '2026-11-10'), 'open');
-  assert.equal(getStatus(null, '2026-11', '2026-11-11'), 'overdue');
+test('依資料月份：10 月資料 11/1–11/15 開放填報，16 日起逾期；當月還沒結束＝未開始', () => {
+  assert.equal(getStatus(null, '2026-11', '2026-11-20'), 'notStarted');
+  assert.equal(getStatus(null, '2026-10', '2026-10-31'), 'notStarted');
+  assert.equal(getStatus(null, '2026-10', '2026-11-01'), 'open');
+  assert.equal(getStatus(null, '2026-10', '2026-11-15'), 'open');
+  assert.equal(getStatus(null, '2026-10', '2026-11-16'), 'overdue');
+  assert.equal(getStatus(null, '2026-12', '2027-01-15'), 'open'); // 跨年
   assert.equal(getStatus({ reviewState: 'none' }, '2026-09', '2026-11-03'), 'overdue');
+});
+
+test('營運月報與票證資料共用同一份時程設定', async () => {
+  const { SCHEDULE, submitWindow } = await import('../js/schedule.js');
+  const { dueWindow } = await import('../js/ticket.js');
+  assert.deepEqual(SCHEDULE.report, SCHEDULE.ticket);
+  assert.deepEqual(submitWindow('report', '2026-10'), { from: '2026-11-01', to: '2026-11-15' });
+  assert.deepEqual(dueWindow('2026-10'), submitWindow('report', '2026-10'));
 });
 
 test('stored review states map to themselves', () => {
@@ -26,14 +36,14 @@ test('invalid reviewState is rejected', () => {
 
 test('operator submit: open/overdue/needsUpdate/reviewing -> reviewing', () => {
   for (const [rs, today] of [['none', '2026-11-05'], ['none', '2026-11-20'], ['needsUpdate', '2026-11-20'], ['reviewing', '2026-11-20']]) {
-    const r = applyAction({ reviewState: rs }, 'submit', 'operator', ctx({ yearMonth: '2026-11', today }));
+    const r = applyAction({ reviewState: rs }, 'submit', 'operator', ctx({ yearMonth: '2026-10', today }));
     assert.equal(r.ok, true, `${rs} ${today}`);
     assert.equal(r.report.reviewState, 'reviewing');
   }
 });
 
 test('cannot submit for a future month or a completed month', () => {
-  assert.equal(applyAction(null, 'submit', 'operator', ctx({ yearMonth: '2026-12', today: '2026-11-03' })).ok, false);
+  assert.equal(applyAction(null, 'submit', 'operator', ctx({ yearMonth: '2026-11', today: '2026-11-03' })).ok, false);
   assert.equal(applyAction({ reviewState: 'completed' }, 'submit', 'operator', ctx({ yearMonth: '2026-10', today: '2026-11-03' })).ok, false);
 });
 
